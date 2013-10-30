@@ -1,0 +1,6 @@
+
+# recursive excludes
+*.swp
+
+# excludes for this directory
+/build/
