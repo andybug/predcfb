@@ -37,8 +37,11 @@ INCLUDE_DIRECTORIES("${PROJECT_BINARY_DIR}")
 
 # --- add includes and build static libraries ---
 
-INCLUDE_DIRECTORIES("${CMAKE_SOURCE_DIR}/lib/minizip")
+INCLUDE_DIRECTORIES(lib/minizip)
 ADD_SUBDIRECTORY(lib/minizip)
+
+INCLUDE_DIRECTORIES(lib/libcsv)
+ADD_SUBDIRECTORY(lib/libcsv)
 
 
 # --- build project ---

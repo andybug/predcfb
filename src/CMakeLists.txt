@@ -11,6 +11,7 @@ ADD_EXECUTABLE(
 TARGET_LINK_LIBRARIES(
 	predcfb
 	# --- libraries ---
+	${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/libcsv.a
 	${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/libminiunz.a
 	z
 )
