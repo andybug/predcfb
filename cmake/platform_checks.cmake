@@ -2,10 +2,10 @@
 INCLUDE(CheckLibraryExists)
 INCLUDE(CheckIncludeFiles)
 
-# check for libarchive
-CHECK_INCLUDE_FILES(archive.h HAS_ARCHIVE_H)
-CHECK_LIBRARY_EXISTS(archive archive_version_number "" HAS_LIBARCHIVE)
-IF(NOT HAS_ARCHIVE_H OR NOT HAS_LIBARCHIVE)
-	MESSAGE(FATAL_ERROR "Missing libarchive - check the README for install instructions")
-ENDIF(NOT HAS_ARCHIVE_H OR NOT HAS_LIBARCHIVE)
+# check for zlib
+CHECK_INCLUDE_FILES(zlib.h HAS_ZLIB_H)
+CHECK_LIBRARY_EXISTS(z zlibVersion "" HAS_ZLIB)
+IF(NOT HAS_ZLIB_H OR NOT HAS_ZLIB)
+	MESSAGE(FATAL_ERROR "Missing zlib")
+ENDIF(NOT HAS_ZLIB_H OR NOT HAS_ZLIB)
 
