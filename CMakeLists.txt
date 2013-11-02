@@ -17,14 +17,12 @@ SET(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
 
-
 # --- config.h generation ---
 
 CONFIGURE_FILE(
 	"${PROJECT_SOURCE_DIR}/src/config.h.in"
 	"${PROJECT_BINARY_DIR}/config.h"
 )
-
 
 
 # --- c compiler flags ---
@@ -37,7 +35,12 @@ INCLUDE_DIRECTORIES(src)
 INCLUDE_DIRECTORIES("${PROJECT_BINARY_DIR}")
 
 
+# --- add includes and build static libraries ---
 
-# --- descend into source ---
+INCLUDE_DIRECTORIES("${CMAKE_SOURCE_DIR}/lib/minizip")
+ADD_SUBDIRECTORY(lib/minizip)
+
+
+# --- build project ---
 
 ADD_SUBDIRECTORY(src)

@@ -1,5 +1,7 @@
 PROJECT(predcfb)
 
+# --- build predcfb ---
+
 ADD_EXECUTABLE(
 	predcfb
 	# --- sources ---
@@ -9,7 +11,8 @@ ADD_EXECUTABLE(
 TARGET_LINK_LIBRARIES(
 	predcfb
 	# --- libraries ---
-	archive
+	${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/libminiunz.a
+	z
 )
 
 INSTALL(
