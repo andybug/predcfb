@@ -7,6 +7,7 @@
 
 static bool opt_help = false;
 static bool opt_version = false;
+static const char *opt_archive = NULL;
 
 enum long_opts {
 	LONG_OPT_HELP,
@@ -36,6 +37,18 @@ static int parse_options(int argc, char **argv)
 		case '?':
 			return -1;
 		}
+	}
+
+	/* handle non-options */
+	while (optind < argc) {
+		if (!opt_archive) {
+			opt_archive = argv[optind];
+		} else {
+			fprintf(stderr, "Only one file can be specified\n");
+			return -2;
+		}
+
+		optind++;
 	}
 
 	return 0;
