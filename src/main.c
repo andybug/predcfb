@@ -5,6 +5,8 @@
 
 #include <getopt.h>
 
+#include "config.h"
+
 static bool opt_help = false;
 static bool opt_version = false;
 static const char *opt_archive = NULL;
@@ -66,7 +68,11 @@ static void print_help(void)
 
 static void print_version(void)
 {
-	puts("predcfb 0.1.0");
+	printf("predcfb version %d.%d.%d\n",
+	       PREDCFB_VERSION_MAJOR,
+	       PREDCFB_VERSION_MINOR,
+	       PREDCFB_VERSION_PATCH);
+
 	exit(EXIT_SUCCESS);
 }
 
