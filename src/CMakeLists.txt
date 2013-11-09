@@ -5,6 +5,7 @@ PROJECT(predcfb)
 ADD_EXECUTABLE(
 	predcfb
 	# --- sources ---
+	archive.c
 	main.c
 )
 

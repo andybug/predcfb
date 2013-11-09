@@ -6,6 +6,7 @@
 #include <getopt.h>
 
 #include "config.h"
+#include "archive.h"
 
 static bool opt_help = false;
 static bool opt_version = false;
@@ -98,6 +99,10 @@ int main(int argc, char **argv)
 
 	if (opt_version)
 		print_version();
+
+	err = archive_read(opt_archive);
+	if (err)
+		exit(EXIT_FAILURE);
 
 	exit(EXIT_SUCCESS);
 }
