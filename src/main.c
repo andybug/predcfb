@@ -6,7 +6,7 @@
 #include <getopt.h>
 
 #include "config.h"
-#include "archive.h"
+#include "input.h"
 
 static bool opt_help = false;
 static bool opt_version = false;
@@ -100,7 +100,7 @@ int main(int argc, char **argv)
 	if (opt_version)
 		print_version();
 
-	err = archive_read(opt_archive);
+	err = input_read_archive(opt_archive);
 	if (err)
 		exit(EXIT_FAILURE);
 

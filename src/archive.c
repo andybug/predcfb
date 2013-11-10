@@ -1,5 +1,4 @@
 
-#include <stdio.h>
 #include <stdbool.h>
 #include <stdlib.h>
 
@@ -22,7 +21,7 @@ int archive_open(archive_ctx *a, const char *path)
 
 	ac->handle = unzOpen(path);
 	if (!ac->handle) {
-		fprintf(stderr, "Unable to open archive\n");
+		free(ac);
 		return ARCHIVE_OPEN_ERROR;
 	}
 
@@ -45,7 +44,7 @@ int archive_open_file(archive_ctx a, const char *file)
 	struct archive_context *ac = a;
 
 	if (unzLocateFile(ac->handle, file, 1) != UNZ_OK)
-		return ARCHIVE_MISSING_FILE_ERROR;
+		return ARCHIVE_FILE_NOT_FOUND_ERROR;
 
 	if (unzOpenCurrentFile(ac->handle) != UNZ_OK)
 		return ARCHIVE_INTERNAL_ERROR;
@@ -87,35 +86,3 @@ int archive_read_file(archive_ctx a, char *buf, size_t len, size_t *read)
 	
 	return eof ? ARCHIVE_EOF : ARCHIVE_OK;
 }
-
-#if 0
-static int extract_conference_file(unzFile handle)
-{
-	static const char CONFERENCE_FILE[] = "conference.csv";
-	static const int BUF_SIZE = 4096;
-	char buf[BUF_SIZE];
-	int err;
-	size_t bytes;
-	bool eof = false;
-
-	err = open_file(handle, CONFERENCE_FILE);
-	if (err)
-		return err;
-
-	while (!eof) {
-		err = read_file(handle, buf, BUF_SIZE - 1, &bytes, &eof);
-		if (err != ARCHIVE_OK)
-			return err;
-
-		puts("---");
-		buf[BUF_SIZE - 1] = '\0';
-		puts(buf);
-	}
-
-	err = close_file(handle);
-	if (err)
-		return err;
-
-	return ARCHIVE_OK;
-}
-#endif

@@ -6,6 +6,7 @@ ADD_EXECUTABLE(
 	predcfb
 	# --- sources ---
 	archive.c
+	input.c
 	main.c
 )
 
