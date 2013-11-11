@@ -4,6 +4,7 @@
 
 #include <unistd.h>
 
+#include "input.h"
 #include "archive.h"
 #include "parse.h"
 

@@ -8,6 +8,7 @@ ADD_EXECUTABLE(
 	archive.c
 	input.c
 	main.c
+	parse.c
 )
 
 TARGET_LINK_LIBRARIES(
