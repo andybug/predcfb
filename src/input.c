@@ -8,6 +8,11 @@
 #include "archive.h"
 #include "parse.h"
 
+struct read_context {
+	archive_ctx ac;
+	parse_ctx pc;
+};
+
 static int check_access(const char *path)
 {
 	int err;
@@ -19,7 +24,7 @@ static int check_access(const char *path)
 	return INPUT_OK;
 }
 
-static int open_archive(archive_ctx *ac, const char *path)
+static int open_archive(struct read_context *rc, const char *path)
 {
 	int err;
 
@@ -27,7 +32,7 @@ static int open_archive(archive_ctx *ac, const char *path)
 	if (err)
 		return err;
 
-	err = archive_open(ac, path);
+	err = archive_open(&rc->ac, path);
 
 	switch (err) {
 	case ARCHIVE_MEMORY_ERROR:
@@ -42,11 +47,11 @@ static int open_archive(archive_ctx *ac, const char *path)
 	return INPUT_OK;
 }
 
-static int open_file(archive_ctx ac, const char *file)
+static int open_file(struct read_context *rc, const char *file)
 {
 	int err;
 
-	err = archive_open_file(ac, file);
+	err = archive_open_file(rc->ac, file);
 	switch (err) {
 	case ARCHIVE_FILE_NOT_FOUND_ERROR:
 		fputs("archive missing file\n", stderr);
@@ -60,7 +65,7 @@ static int open_file(archive_ctx ac, const char *file)
 	return INPUT_OK;
 }
 
-static int read_file(archive_ctx ac, const char *file)
+static int read_file(struct read_context *rc, const char *file)
 {
 	static const size_t BUF_SIZE = 16;
 	char buf[BUF_SIZE];
@@ -68,12 +73,12 @@ static int read_file(archive_ctx ac, const char *file)
 	bool eof = false;
 	int err;
 
-	err = open_file(ac, file);
+	err = open_file(rc, file);
 	if (err)
 		return err;
 
 	while (!eof) {
-		err = archive_read_file(ac, buf, BUF_SIZE, &read);
+		err = archive_read_file(rc->ac, buf, BUF_SIZE, &read);
 
 		if (err == ARCHIVE_OK || (err == ARCHIVE_EOF && read > 0)) {
 			/* call parsing functions */
@@ -87,7 +92,7 @@ static int read_file(archive_ctx ac, const char *file)
 			return INPUT_ARCHIVE_ERROR;
 	}
 
-	err = archive_close_file(ac);
+	err = archive_close_file(rc->ac);
 	if (err)
 		return INPUT_ARCHIVE_ERROR;
 
@@ -97,17 +102,17 @@ static int read_file(archive_ctx ac, const char *file)
 int input_read_archive(const char *path)
 {
 	int err;
-	archive_ctx ac;
+	struct read_context rc;
 
-	err = open_archive(&ac, path);
+	err = open_archive(&rc, path);
 	if (err)
 		return err;
 
-	err = read_file(ac, "conference.csv");
+	err = read_file(&rc, "conference.csv");
 	if (err)
 		return err;
 
-	err = archive_close(ac);
+	err = archive_close(rc.ac);
 	if (err)
 		return INPUT_ARCHIVE_ERROR;
 
