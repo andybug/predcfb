@@ -28,6 +28,7 @@ struct parse_context {
 };
 
 /* prototypes for parsing functions */
+
 static void all_cb_field(void*, size_t, void*);
 static void conf_cb_record(int, void*);
 
@@ -35,6 +36,30 @@ const struct parse_file_handler parse_file_handlers[] = {
 	{ "conference.csv", conf_cb_record },
 	{ NULL, NULL }
 };
+
+/* strbuf functions */
+
+static const char *strbuf_add(struct strbuf *s, const char *str, size_t len)
+{
+	size_t total_len;
+	size_t new_used;
+	const char *alloc_str;
+
+	total_len = len + 1;
+	new_used = s->used + total_len;
+	if (new_used >= STRBUF_SIZE)
+		return NULL;
+
+	alloc_str = strncpy(s->buf + s->used, str, total_len);
+	s->used = new_used;
+
+	return alloc_str;
+}
+
+static void strbuf_clear(struct strbuf *s)
+{
+	s->used = 0;
+}
 
 static void all_cb_field(void *data, size_t len, void* v)
 {
