@@ -43,6 +43,9 @@ static struct file_handler file_handlers[] = {
 
 static void all_cb_field(void *data, size_t len, void* v)
 {
+	char *str = data;
+
+	printf("'%.*s'\n", len, str);
 }
 
 static void conf_cb_record(int i, void* v)

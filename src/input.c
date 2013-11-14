@@ -78,6 +78,24 @@ static int input_open_file(struct read_context *rc, const char *file)
 	return INPUT_OK;
 }
 
+static int input_init_parser(struct read_context *rc, const char *file)
+{
+	int err;
+
+	err = parse_init(&rc->pc, file);
+	switch (err) {
+	case PARSE_MEMORY_ERROR:
+		fputs("out of memory error\n", stderr);
+		return INPUT_MEMORY_ERROR;
+
+	case PARSE_INTERNAL_ERROR:
+		fputs("error initializing parser\n", stderr);
+		return INPUT_PARSE_ERROR;
+	}
+
+	return INPUT_OK;
+}
+
 static int input_read_file(struct read_context *rc, const char *file)
 {
 	static const size_t BUF_SIZE = 16;
@@ -90,12 +108,17 @@ static int input_read_file(struct read_context *rc, const char *file)
 	if (err)
 		return err;
 
+	err = input_init_parser(rc, file);
+	if (err)
+		return err;
+
 	while (!eof) {
 		err = archive_read_file(rc->ac, buf, BUF_SIZE, &read);
 
 		if (err == ARCHIVE_OK || (err == ARCHIVE_EOF && read > 0)) {
-			/* call parsing functions */
-			printf("parse '%.*s'\n", (int)read, buf);
+			err = parse_data(rc->pc, buf, read);
+			if (err)
+				return INPUT_PARSE_ERROR;
 		}
 
 		if (err == ARCHIVE_EOF)
@@ -104,6 +127,10 @@ static int input_read_file(struct read_context *rc, const char *file)
 		else if (err == ARCHIVE_INTERNAL_ERROR)
 			return INPUT_ARCHIVE_ERROR;
 	}
+
+	err = parse_finish(rc->pc);
+	if (err)
+		return INPUT_PARSE_ERROR;
 
 	err = archive_close_file(rc->ac);
 	if (err)

@@ -6,6 +6,7 @@
 #define INPUT_MEMORY_ERROR		(-2)
 #define INPUT_ACCESS_ERROR		(-3)
 #define INPUT_INVALID_ARCHIVE_ERROR	(-4)
+#define INPUT_PARSE_ERROR		(-5)
 
 extern int input_read_archive(const char *path);
 
