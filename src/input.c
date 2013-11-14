@@ -24,7 +24,7 @@ static int check_access(const char *path)
 	return INPUT_OK;
 }
 
-static int open_archive(struct read_context *rc, const char *path)
+static int input_open_archive(struct read_context *rc, const char *path)
 {
 	int err;
 
@@ -47,7 +47,20 @@ static int open_archive(struct read_context *rc, const char *path)
 	return INPUT_OK;
 }
 
-static int open_file(struct read_context *rc, const char *file)
+static int input_close_archive(struct read_context *rc)
+{
+	int err;
+
+	err = archive_close(rc->ac);
+	if (err)
+		return INPUT_ARCHIVE_ERROR;
+
+	rc->ac = NULL;
+
+	return INPUT_OK;
+}
+
+static int input_open_file(struct read_context *rc, const char *file)
 {
 	int err;
 
@@ -65,7 +78,7 @@ static int open_file(struct read_context *rc, const char *file)
 	return INPUT_OK;
 }
 
-static int read_file(struct read_context *rc, const char *file)
+static int input_read_file(struct read_context *rc, const char *file)
 {
 	static const size_t BUF_SIZE = 16;
 	char buf[BUF_SIZE];
@@ -73,7 +86,7 @@ static int read_file(struct read_context *rc, const char *file)
 	bool eof = false;
 	int err;
 
-	err = open_file(rc, file);
+	err = input_open_file(rc, file);
 	if (err)
 		return err;
 
@@ -104,17 +117,17 @@ int input_read_archive(const char *path)
 	int err;
 	struct read_context rc;
 
-	err = open_archive(&rc, path);
+	err = input_open_archive(&rc, path);
 	if (err)
 		return err;
 
-	err = read_file(&rc, "conference.csv");
+	err = input_read_file(&rc, "conference.csv");
 	if (err)
 		return err;
 
-	err = archive_close(rc.ac);
+	err = input_close_archive(&rc);
 	if (err)
-		return INPUT_ARCHIVE_ERROR;
+		return err;
 
 	return INPUT_OK;
 }
