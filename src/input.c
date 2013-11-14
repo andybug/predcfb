@@ -1,6 +1,5 @@
 
 #include <stdio.h>
-#include <stdbool.h>
 
 #include <unistd.h>
 
@@ -98,10 +97,9 @@ static int input_init_parser(struct read_context *rc, const char *file)
 
 static int input_read_file(struct read_context *rc, const char *file)
 {
-	static const size_t BUF_SIZE = 16;
+	static const size_t BUF_SIZE = 4096;
 	char buf[BUF_SIZE];
 	size_t read;
-	bool eof = false;
 	int err;
 
 	err = input_open_file(rc, file);
@@ -112,7 +110,7 @@ static int input_read_file(struct read_context *rc, const char *file)
 	if (err)
 		return err;
 
-	while (!eof) {
+	for (;;) {
 		err = archive_read_file(rc->ac, buf, BUF_SIZE, &read);
 
 		if (err == ARCHIVE_OK || (err == ARCHIVE_EOF && read > 0)) {
@@ -122,7 +120,7 @@ static int input_read_file(struct read_context *rc, const char *file)
 		}
 
 		if (err == ARCHIVE_EOF)
-			eof = true;
+			break;
 
 		else if (err == ARCHIVE_INTERNAL_ERROR)
 			return INPUT_ARCHIVE_ERROR;
