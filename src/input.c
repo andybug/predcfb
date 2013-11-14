@@ -59,11 +59,12 @@ static int input_close_archive(struct read_context *rc)
 	return INPUT_OK;
 }
 
-static int input_open_file(struct read_context *rc, const char *file)
+static int input_open_file(struct read_context *rc,
+                           const struct parse_file_handler *file_handler)
 {
 	int err;
 
-	err = archive_open_file(rc->ac, file);
+	err = archive_open_file(rc->ac, file_handler->file);
 	switch (err) {
 	case ARCHIVE_FILE_NOT_FOUND_ERROR:
 		fputs("archive missing file\n", stderr);
@@ -77,11 +78,12 @@ static int input_open_file(struct read_context *rc, const char *file)
 	return INPUT_OK;
 }
 
-static int input_init_parser(struct read_context *rc, const char *file)
+static int input_init_parser(struct read_context *rc,
+                             const struct parse_file_handler *file_handler)
 {
 	int err;
 
-	err = parse_init(&rc->pc, file);
+	err = parse_init(&rc->pc, file_handler);
 	switch (err) {
 	case PARSE_MEMORY_ERROR:
 		fputs("out of memory error\n", stderr);
@@ -95,18 +97,19 @@ static int input_init_parser(struct read_context *rc, const char *file)
 	return INPUT_OK;
 }
 
-static int input_read_file(struct read_context *rc, const char *file)
+static int input_read_file(struct read_context *rc,
+                           const struct parse_file_handler *file_handler)
 {
 	static const size_t BUF_SIZE = 4096;
 	char buf[BUF_SIZE];
 	size_t read;
 	int err;
 
-	err = input_open_file(rc, file);
+	err = input_open_file(rc, file_handler);
 	if (err)
 		return err;
 
-	err = input_init_parser(rc, file);
+	err = input_init_parser(rc, file_handler);
 	if (err)
 		return err;
 
@@ -141,14 +144,20 @@ int input_read_archive(const char *path)
 {
 	int err;
 	struct read_context rc;
+	const struct parse_file_handler *file_handler;
 
 	err = input_open_archive(&rc, path);
 	if (err)
 		return err;
 
-	err = input_read_file(&rc, "conference.csv");
-	if (err)
-		return err;
+	file_handler = &parse_file_handlers[0];
+	while (file_handler->file) {
+		err = input_read_file(&rc, file_handler);
+		if (err)
+			return err;
+
+		file_handler++;
+	}
 
 	err = input_close_archive(&rc);
 	if (err)

@@ -27,16 +27,11 @@ struct parse_context {
 	struct field_list field_list;
 };
 
-struct file_handler {
-	const char *file;
-	void (*cb_record)(int, void*);
-};
-
 /* prototypes for parsing functions */
 static void all_cb_field(void*, size_t, void*);
 static void conf_cb_record(int, void*);
 
-static struct file_handler file_handlers[] = {
+const struct parse_file_handler parse_file_handlers[] = {
 	{ "conference.csv", conf_cb_record },
 	{ NULL, NULL }
 };
@@ -83,7 +78,7 @@ int parse_finish(parse_ctx p)
 	return PARSE_OK;
 }
 
-int parse_init(parse_ctx *p, const char *file)
+int parse_init(parse_ctx *p, const struct parse_file_handler *file_handler)
 {
 	struct parse_context *pc;
 	int err;
@@ -92,10 +87,7 @@ int parse_init(parse_ctx *p, const char *file)
 	if (!pc)
 		return PARSE_MEMORY_ERROR;
 
-	/* FIXME */
-	if (strcmp(file, "conference.csv") == 0) {
-		pc->cb_record = conf_cb_record;
-	}
+	pc->cb_record = file_handler->handler;
 
 	err = csv_init(&pc->parser, CSV_STRICT);
 	if (err) {
