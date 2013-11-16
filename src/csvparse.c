@@ -81,5 +81,27 @@ int csvp_destroy(csvp_ctx *c)
 
 int csvp_parse(csvp_ctx *c, char *buf, size_t len)
 {
-	return 0;
+	size_t bytes;
+
+	bytes = csv_parse(&c->parser,
+	                  buf,
+	                  len,
+	                  add_to_fieldlist,
+	                  send_fieldlist_to_parse,
+	                  c);
+
+	if (bytes != len) {
+		c->error = CSVP_EPARSE;
+		return CSVP_ERROR;
+	}
+
+	/*
+	 * this check is necessary since these errors are detected and
+	 * set in the callbacks add_to_fieldlist and send_fieldlist_to_parse,
+	 * which cannot return an error value
+	 */
+	if (c->error == CSVP_ETOOMANY || c->error == CSVP_EPARSE)
+		return CSVP_ERROR;
+
+	return CSVP_OK;
 }
