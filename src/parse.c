@@ -8,7 +8,8 @@ const struct parse_handler parse_handlers[] = {
 	{ NULL, PARSE_FILE_NONE, NULL }
 };
 
-const int num_parse_handlers = sizeof(parse_handlers) / sizeof(struct parse_handler);
+/* subtract 1 from total to account for ending null struct */
+const int num_parse_handlers = (sizeof(parse_handlers) / sizeof(struct parse_handler)) - 1;
 
 /* parsing functions */
 
