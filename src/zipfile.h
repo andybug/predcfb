@@ -10,7 +10,8 @@ enum zipfile_err {
 	ZIPFILE_EPATH,
 	ZIPFILE_EFILEBAD,
 	ZIPFILE_EINTERNAL,
-	ZIPFILE_ENOENT
+	ZIPFILE_ENOENT,
+	ZIPFILE_ENOTYPE
 };
 
 extern int zipfile_read(const char *file);

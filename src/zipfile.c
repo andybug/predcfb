@@ -10,6 +10,8 @@
 #include <csv.h>
 
 #include "zipfile.h"
+#include "parse.h"
+#include "csvparse.h"
 
 /*
  * This structure will keep track of the library handles and all of
@@ -147,7 +149,9 @@ static ssize_t zipfile_read_block(zf_readctx *z, char *buf, size_t count)
 	return bytes_read;
 }
 
-static int zipfile_read_file(zf_readctx *z, const char *file)
+/* filetype-specific reading functions */
+
+static int zipfile_read_csv_file(zf_readctx *z, const char *file)
 {
 	static const int ZIPFILE_BUF_SIZE = 16;
 	char buf[ZIPFILE_BUF_SIZE];
@@ -175,6 +179,29 @@ static int zipfile_read_file(zf_readctx *z, const char *file)
 	return ZIPFILE_OK;
 }
 
+static int zipfile_read_files(zf_readctx *z)
+{
+	int i;
+	const char *file;
+
+	for (i = 0; i < num_parse_handlers; i++) {
+		file = parse_handlers[i].file;
+
+		switch (parse_handlers[i].type) {
+		case PARSE_FILE_CSV:
+			if (zipfile_read_csv_file(z, file) != ZIPFILE_OK)
+				return ZIPFILE_ERROR;
+			break;
+
+		case PARSE_FILE_NONE:
+			z->error = ZIPFILE_ENOTYPE;
+			return ZIPFILE_ERROR;
+		}
+	}
+
+	return ZIPFILE_OK;
+}
+
 /* global functions */
 
 int zipfile_read(const char *path)
@@ -184,6 +211,9 @@ int zipfile_read(const char *path)
 	memset(zp, 0, sizeof(zf_readctx));
 
 	if (zipfile_open_archive(zp, path) != ZIPFILE_OK)
+		return ZIPFILE_ERROR;
+
+	if (zipfile_read_files(zp) != ZIPFILE_OK)
 		return ZIPFILE_ERROR;
 
 	if (zipfile_close_archive(zp) != ZIPFILE_OK)
