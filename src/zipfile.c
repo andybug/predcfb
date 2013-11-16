@@ -2,6 +2,7 @@
 #include <string.h>
 #include <assert.h>
 #include <errno.h>
+#include <stdbool.h>
 
 #include <unistd.h>
 
@@ -17,6 +18,10 @@
 typedef struct zipfile_read_context {
 	unzFile unzip_handle;
 	struct csv_parser csv_handle;
+	const char *open_archive;
+	const char *open_file;
+	bool archive_open;
+	bool file_open;
 	enum zipfile_err error;
 } zf_readctx;
 
@@ -62,17 +67,35 @@ static int zipfile_open_archive(zf_readctx *z, const char *path)
 		return ZIPFILE_ERROR;
 	}
 
+	z->open_archive = path;
+	z->archive_open = true;
+
+	return ZIPFILE_OK;
+}
+
+static int zipfile_close_archive(zf_readctx *z)
+{
+	assert(z->archive_open == true);
+	assert(z->file_open == false);
+
+	if (unzClose(z->unzip_handle) != UNZ_OK) {
+		z->error = ZIPFILE_EINTERNAL;
+		return ZIPFILE_ERROR;
+	}
+
 	return ZIPFILE_OK;
 }
 
 int zipfile_read(const char *path)
 {
-	zf_readctx z, *zp;
+	zf_readctx z, *zp = &z;
 
-	zp = &z;
 	memset(zp, 0, sizeof(zf_readctx));
 
 	if (zipfile_open_archive(zp, path) != ZIPFILE_OK)
+		return ZIPFILE_ERROR;
+
+	if (zipfile_close_archive(zp) != ZIPFILE_OK)
 		return ZIPFILE_ERROR;
 
 	return ZIPFILE_OK;
