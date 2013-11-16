@@ -30,6 +30,7 @@ int parse_conference_csv(struct fieldlist *f)
 		else
 			fputs(", ", stdout);
 
+		str = fieldlist_iter_next(f);
 		count++;
 	}
 

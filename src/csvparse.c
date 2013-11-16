@@ -10,7 +10,7 @@ struct csvparse_context {
 	struct csv_parser parser;
 	enum csvp_error error;
 	struct fieldlist fieldlist;
-	struct parse_handler *handler;
+	const struct parse_handler *handler;
 };
 
 static void add_to_fieldlist(void *str, size_t len, void *mydata)
@@ -31,9 +31,11 @@ static void send_fieldlist_to_parse(int ch, void *mydata)
 
 	if (c->handler->parsing_func(&c->fieldlist) != PARSE_OK)
 		c->error = CSVP_EPARSE;
+
+	fieldlist_clear(&c->fieldlist);
 }
 
-csvp_ctx *csvp_create(struct parse_handler *handler)
+csvp_ctx *csvp_create(const struct parse_handler *handler)
 {
 	csvp_ctx *c;
 

@@ -151,17 +151,24 @@ static ssize_t zipfile_read_block(zf_readctx *z, char *buf, size_t count)
 
 /* filetype-specific reading functions */
 
-static int zipfile_read_csv_file(zf_readctx *z, const char *file)
+static int zipfile_read_csv_file(zf_readctx *z, const struct parse_handler *handler)
 {
-	static const int ZIPFILE_BUF_SIZE = 16;
+	static const int ZIPFILE_BUF_SIZE = 4096;
 	char buf[ZIPFILE_BUF_SIZE];
 	ssize_t bytes;
+	csvp_ctx *csvp;
 
 	assert(z->archive_open == true);
 	assert(z->file_open == false);
 
-	if (zipfile_open_file(z, file) != ZIPFILE_OK)
+	if (zipfile_open_file(z, handler->file) != ZIPFILE_OK)
 		return ZIPFILE_ERROR;
+
+	csvp = csvp_create(handler);
+	if (!csvp) {
+		z->error = ZIPFILE_EUNKNOWN;
+		return ZIPFILE_ERROR;
+	}
 
 	while ((bytes = zipfile_read_block(z, buf, ZIPFILE_BUF_SIZE))) {
 		if (bytes == ZIPFILE_ERROR)
@@ -170,7 +177,15 @@ static int zipfile_read_csv_file(zf_readctx *z, const char *file)
 		if (bytes == 0) /* eof */
 			break;
 
-		/* FIXME: call parsing function for the block */
+		if (csvp_parse(csvp, buf, bytes) != CSVP_OK) {
+			z->error = ZIPFILE_EPARSE;
+			return ZIPFILE_ERROR;
+		}
+	}
+
+	if (csvp_destroy(csvp) != CSVP_OK) {
+		z->error = ZIPFILE_EPARSE;
+		return ZIPFILE_ERROR;
 	}
 
 	if (zipfile_close_file(z) != ZIPFILE_OK)
@@ -182,14 +197,14 @@ static int zipfile_read_csv_file(zf_readctx *z, const char *file)
 static int zipfile_read_files(zf_readctx *z)
 {
 	int i;
-	const char *file;
+	const struct parse_handler *handler;
 
 	for (i = 0; i < num_parse_handlers; i++) {
-		file = parse_handlers[i].file;
+		handler = &parse_handlers[i];
 
-		switch (parse_handlers[i].type) {
+		switch (handler->type) {
 		case PARSE_FILE_CSV:
-			if (zipfile_read_csv_file(z, file) != ZIPFILE_OK)
+			if (zipfile_read_csv_file(z, handler) != ZIPFILE_OK)
 				return ZIPFILE_ERROR;
 			break;
 

@@ -15,7 +15,7 @@ enum csvp_error {
 	CSVP_EPARSE
 };
 
-extern csvp_ctx *csvp_create(struct parse_handler *handler);
+extern csvp_ctx *csvp_create(const struct parse_handler *handler);
 extern int csvp_destroy(csvp_ctx *c);
 extern int csvp_parse(csvp_ctx *c, char *buf, size_t len);
 
