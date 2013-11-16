@@ -5,6 +5,7 @@ PROJECT(predcfb)
 ADD_EXECUTABLE(
 	predcfb
 	# --- sources ---
+	csvparse.c
 	fieldlist.c
 	main.c
 	parse.c
