@@ -10,6 +10,7 @@ ADD_EXECUTABLE(
 	input.c
 	main.c
 	parse.c
+	zipfile.c
 )
 
 TARGET_LINK_LIBRARIES(
