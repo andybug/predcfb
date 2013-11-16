@@ -18,8 +18,6 @@
 typedef struct zipfile_read_context {
 	unzFile unzip_handle;
 	struct csv_parser csv_handle;
-	const char *open_archive;
-	const char *open_file;
 	bool archive_open;
 	bool file_open;
 	enum zipfile_err error;
@@ -67,7 +65,6 @@ static int zipfile_open_archive(zf_readctx *z, const char *path)
 		return ZIPFILE_ERROR;
 	}
 
-	z->open_archive = path;
 	z->archive_open = true;
 
 	return ZIPFILE_OK;
@@ -82,6 +79,8 @@ static int zipfile_close_archive(zf_readctx *z)
 		z->error = ZIPFILE_EINTERNAL;
 		return ZIPFILE_ERROR;
 	}
+
+	z->archive_open = false;
 
 	return ZIPFILE_OK;
 }
@@ -103,6 +102,8 @@ static int zipfile_open_file(zf_readctx *z, const char *file)
 		return ZIPFILE_ERROR;
 	}
 
+	z->file_open = true;
+
 	return ZIPFILE_OK;
 }
 
@@ -114,8 +115,67 @@ static int zipfile_close_file(zf_readctx *z)
 	if (unzCloseCurrentFile(z->unzip_handle) != UNZ_OK)
 		return ZIPFILE_ERROR;
 
+	z->file_open = false;
+
 	return ZIPFILE_OK;
 }
+
+/* functions for reading data from the zipfile */
+
+static ssize_t zipfile_read_block(zf_readctx *z, char *buf, size_t count)
+{
+	int err;
+	ssize_t bytes_read = 0;
+
+	assert(z->archive_open == true);
+	assert(z->file_open == true);
+
+	err = unzReadCurrentFile(z->unzip_handle, buf, count);
+
+	if (err > 0) {
+		/* successful read */
+		bytes_read = (ssize_t) err;
+	} else if (err == 0) {
+		/* nothing to read, eof */
+		bytes_read = 0;
+	} else if (err < 0) {
+		/* error */
+		z->error = ZIPFILE_EINTERNAL;
+		return ZIPFILE_ERROR;
+	}
+
+	return bytes_read;
+}
+
+static int zipfile_read_file(zf_readctx *z, const char *file)
+{
+	static const int ZIPFILE_BUF_SIZE = 16;
+	char buf[ZIPFILE_BUF_SIZE];
+	ssize_t bytes;
+
+	assert(z->archive_open == true);
+	assert(z->file_open == false);
+
+	if (zipfile_open_file(z, file) != ZIPFILE_OK)
+		return ZIPFILE_ERROR;
+
+	while ((bytes = zipfile_read_block(z, buf, ZIPFILE_BUF_SIZE))) {
+		if (bytes == ZIPFILE_ERROR)
+			return ZIPFILE_ERROR;
+
+		if (bytes == 0) /* eof */
+			break;
+
+		/* FIXME: call parsing function for the block */
+	}
+
+	if (zipfile_close_file(z) != ZIPFILE_OK)
+		return ZIPFILE_ERROR;
+
+	return ZIPFILE_OK;
+}
+
+/* global functions */
 
 int zipfile_read(const char *path)
 {
