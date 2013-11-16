@@ -1,58 +1,42 @@
 
-#include <stdlib.h>
-#include <string.h>
-
-#include <csv.h>
+#include <stdio.h>
 
 #include "parse.h"
-#include "fieldlist.h"
 
-struct parse_context {
-	struct csv_parser parser;
-	void (*cb_field)(void*, size_t, void*);
-	void (*cb_record)(int, void*);
-	struct fieldlist field_list;
+const struct parse_handler parse_handlers[] = {
+	{ "conference.csv", PARSE_FILE_CSV, parse_conference_csv },
+	{ NULL, PARSE_FILE_NONE, NULL }
 };
 
-/* prototypes for parsing functions */
+const int num_parse_handlers = sizeof(parse_handlers) / sizeof(struct parse_handler);
 
-static void all_cb_field(void*, size_t, void*);
-static void conf_cb_record(int, void*);
+/* parsing functions */
 
-const struct parse_file_handler parse_file_handlers[] = {
-	{ "conference.csv", conf_cb_record },
-	{ NULL, NULL }
-};
-
-static void all_cb_field(void *data, size_t len, void* v)
+int parse_conference_csv(struct fieldlist *f)
 {
-	struct fieldlist *fl = v;
-	int err;
+	const char *str;
+	int count = 0;
 
-	err = fieldlist_add(fl, data, len);
-	if (err)
-		fputs("error: field_list full\n", stderr);
-}
+	str = fieldlist_iter_begin(f);
 
-static void conf_cb_record(int i_, void* v)
-{
-	struct fieldlist *fl = v;
-	int i;
+	while (str) {
+		if (count == 0)
+			fputc('[', stdout);
 
-	fputc('[', stdout);
+		fprintf(stdout, "'%s'", str);
 
-	for (i = 0; i < fl->num_fields; i++) {
-		if (i + 1 == fl->num_fields)
-			fputs(fl->fields[i], stdout);
+		if (count + 1 == f->num_fields)
+			fputs("]\n", stdout);
 		else
-			fprintf(stdout, "%s, ", fl->fields[i]);
+			fputs(", ", stdout);
+
+		count++;
 	}
 
-	fputs("]\n", stdout);
-
-	fieldlist_clear(fl);
+	return PARSE_OK;
 }
 
+#if 0
 int parse_data(parse_ctx p, const char *buf, size_t len)
 {
 	struct parse_context *pc = p;
@@ -106,3 +90,4 @@ int parse_init(parse_ctx *p, const struct parse_file_handler *file_handler)
 
 	return PARSE_OK;
 }
+#endif

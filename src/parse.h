@@ -1,22 +1,25 @@
 #ifndef PARSE_H
 #define PARSE_H
 
-#define PARSE_OK		0
-#define PARSE_MEMORY_ERROR	(-1)
-#define PARSE_INTERNAL_ERROR	(-2)
+#include "fieldlist.h"
 
-typedef void* parse_ctx;
-typedef void* parse_handler;
+#define PARSE_OK	0
+#define PARSE_ERROR	(-1)
 
-struct parse_file_handler {
-	const char *file;
-	void (*handler)(int, void*);
+enum parse_file_type {
+	PARSE_FILE_NONE,
+	PARSE_FILE_CSV
 };
 
-extern const struct parse_file_handler parse_file_handlers[];
+struct parse_handler {
+	const char *file;
+	enum parse_file_type type;
+	int (*parsing_func)(struct fieldlist *);
+};
 
-extern int parse_init(parse_ctx *p, const struct parse_file_handler *file_handler);
-extern int parse_finish(parse_ctx p);
-extern int parse_data(parse_ctx p, const char *buf, size_t len);
+extern const struct parse_handler parse_handlers[];
+extern const int num_parse_handlers;
+
+extern int parse_conference_csv(struct fieldlist *f);
 
 #endif
