@@ -86,6 +86,37 @@ static int zipfile_close_archive(zf_readctx *z)
 	return ZIPFILE_OK;
 }
 
+/* functions for extracting files inside the archive */
+
+static int zipfile_open_file(zf_readctx *z, const char *file)
+{
+	assert(z->archive_open == true);
+	assert(z->file_open == false);
+
+	if (unzLocateFile(z->unzip_handle, file, 1) != UNZ_OK) {
+		z->error = ZIPFILE_ENOENT;
+		return ZIPFILE_ERROR;
+	}
+
+	if (unzOpenCurrentFile(z->unzip_handle) != UNZ_OK) {
+		z->error = ZIPFILE_EINTERNAL;
+		return ZIPFILE_ERROR;
+	}
+
+	return ZIPFILE_OK;
+}
+
+static int zipfile_close_file(zf_readctx *z)
+{
+	assert(z->archive_open == true);
+	assert(z->file_open == true);
+
+	if (unzCloseCurrentFile(z->unzip_handle) != UNZ_OK)
+		return ZIPFILE_ERROR;
+
+	return ZIPFILE_OK;
+}
+
 int zipfile_read(const char *path)
 {
 	zf_readctx z, *zp = &z;
