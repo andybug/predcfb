@@ -17,8 +17,23 @@ static void add_to_fieldlist(void *str, size_t len, void *mydata)
 {
 	struct csvparse_context *c = mydata;
 
-	if (fieldlist_add(&c->fieldlist, str, len) != FIELDLIST_OK)
-		c->error = CSVP_ETOOMANY;
+	if (fieldlist_add(&c->fieldlist, str, len) != FIELDLIST_OK) {
+		switch (c->fieldlist.error) {
+
+		case FIELDLIST_EMAXFIELDS:
+			c->error = CSVP_ETOOMANY;
+			break;
+
+		case FIELDLIST_ESTRBUFSPACE:
+			c->error = CSVP_ENOBUFS;
+			break;
+
+		default:
+		case FIELDLIST_ENONE:
+			/* what? */
+			break;
+		}
+	}
 }
 
 static void send_fieldlist_to_parse(int ch, void *mydata)
@@ -26,11 +41,10 @@ static void send_fieldlist_to_parse(int ch, void *mydata)
 	struct csvparse_context *c = mydata;
 	(void) ch;
 
-	if (c->fieldlist.error != FIELDLIST_ENONE)
-		return;
-
-	if (c->handler->parsing_func(&c->fieldlist) != PARSE_OK)
-		c->error = CSVP_EPARSE;
+	if (c->error == CSVP_ENONE) {
+		if (c->handler->parsing_func(&c->fieldlist) != PARSE_OK)
+			c->error = CSVP_EPARSE;
+	}
 
 	fieldlist_clear(&c->fieldlist);
 }

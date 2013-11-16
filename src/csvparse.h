@@ -10,8 +10,10 @@
 typedef struct csvparse_context csvp_ctx;
 
 enum csvp_error {
+	CSVP_ENONE,
 	CSVP_ENOMEM,
 	CSVP_ETOOMANY,
+	CSVP_ENOBUFS,
 	CSVP_EPARSE
 };
 
