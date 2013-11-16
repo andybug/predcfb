@@ -56,6 +56,7 @@ void fieldlist_clear(struct fieldlist *f)
 	strbuf_clear(&f->strbuf);
 	f->num_fields = 0;
 	f->iter = 0;
+	f->error = FIELDLIST_ENONE;
 }
 
 const char *fieldlist_iter_begin(struct fieldlist *f)
