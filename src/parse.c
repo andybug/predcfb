@@ -5,6 +5,7 @@
 #include <limits.h>
 #include <string.h>
 #include <stdio.h>
+#include <stdbool.h>
 
 #include "parse.h"
 #include "conference.h"
@@ -19,6 +20,7 @@ const int num_parse_handlers = (sizeof(parse_handlers) / sizeof(struct parse_han
 
 /* conversion functions */
 
+#if 0
 static int parse_short(const char *str, short *out)
 {
 	long int li;
@@ -27,7 +29,10 @@ static int parse_short(const char *str, short *out)
 	li = strtol(str, &endptr, 10);
 
 	if (*endptr != '\0') {
-		/* there was a bad char, str is not a number */
+		/*
+		 * a non-number character was found in the string,
+		 * so this is invalid
+		 */
 		return PARSE_ERROR;
 	}
 
@@ -43,16 +48,80 @@ static int parse_short(const char *str, short *out)
 
 	return PARSE_OK;
 }
+#endif
+
+static int parse_int(const char *str, int *out)
+{
+	long int li;
+	char *endptr;
+
+	li = strtol(str, &endptr, 10);
+
+	if (*endptr != '\0') {
+		/*
+		 * a non-number character was found in the string,
+		 * so this is invalid
+		 */
+		return PARSE_ERROR;
+	}
+
+	if (li == LONG_MIN || li == LONG_MAX) {
+		if (errno == ERANGE)
+			return PARSE_ERROR;
+	}
+
+	if (li < INT_MIN || li > INT_MAX)
+		return PARSE_ERROR;
+
+	*out = (int) li;
+
+	return PARSE_OK;
+}
 
 /* parsing functions */
 
+static int check_conference_csv_header(struct fieldlist *f)
+{
+	static const char *field_names[] = {
+		"Conference Code",
+		"Name",
+		"Subdivision"
+	};
+
+	int count = 0;
+	const char *field;
+
+	assert(f->num_fields == 3);
+
+	field = fieldlist_iter_begin(f);
+
+	while (field) {
+		if (count >= 3)
+			return PARSE_ERROR;
+
+		if (strcmp(field_names[count], field) != 0)
+			return PARSE_ERROR;
+
+		field = fieldlist_iter_next(f);
+		count++;
+	}
+
+	return PARSE_OK;
+}
+
 int parse_conference_csv(struct fieldlist *f)
 {
+	static bool processed_header = false;
 	struct conference *conf;
 	const char *str;
 	size_t len;
 
 	assert(f->num_fields == 3);
+
+	if (!processed_header) {
+		processed_header = true;
+		return check_conference_csv_header(f);
+	}
 
 	conf = conference_create();
 	if (!conf) {
@@ -62,7 +131,7 @@ int parse_conference_csv(struct fieldlist *f)
 
 	/* id field */
 	str = fieldlist_iter_begin(f);
-	if (parse_short(str, &conf->id) != PARSE_OK)
+	if (parse_int(str, &conf->id) != PARSE_OK)
 		return PARSE_ERROR;
 
 	/* conference name */

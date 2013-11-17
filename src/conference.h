@@ -10,7 +10,7 @@ enum conference_division {
 };
 
 struct conference {
-	short id;
+	int id;
 	char name[CONFERENCE_NAME_MAX];
 	enum conference_division div;
 };
