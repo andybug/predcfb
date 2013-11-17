@@ -31,16 +31,14 @@ SET(CMAKE_C_FLAGS "-Wall -Wextra -std=c99 -pedantic -D_POSIX_C_SOURCE=200809L")
 SET(CMAKE_C_FLAGS_DEBUG "-g -O0")
 SET(CMAKE_C_FLAGS_RELEASE "-O3")
 
+INCLUDE_DIRECTORIES(lib)
 INCLUDE_DIRECTORIES(src)
 INCLUDE_DIRECTORIES("${PROJECT_BINARY_DIR}")
 
 
-# --- add includes and build static libraries ---
+# --- build static libraries ---
 
-INCLUDE_DIRECTORIES(lib/minizip)
 ADD_SUBDIRECTORY(lib/minizip)
-
-INCLUDE_DIRECTORIES(lib/libcsv)
 ADD_SUBDIRECTORY(lib/libcsv)
 
 

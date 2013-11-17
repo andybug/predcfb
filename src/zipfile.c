@@ -6,8 +6,7 @@
 
 #include <unistd.h>
 
-#include <unzip.h>
-#include <csv.h>
+#include <minizip/unzip.h>
 
 #include "zipfile.h"
 #include "parse.h"
@@ -19,7 +18,6 @@
  */
 typedef struct zipfile_read_context {
 	unzFile unzip_handle;
-	struct csv_parser csv_handle;
 	bool archive_open;
 	bool file_open;
 	enum zipfile_err error;
