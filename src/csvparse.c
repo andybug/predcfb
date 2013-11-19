@@ -3,8 +3,8 @@
 
 #include <libcsv/csv.h>
 
-#include "csvparse.h"
-#include "fieldlist.h"
+#include <predcfb/csvparse.h>
+#include <predcfb/fieldlist.h>
 
 struct csvparse_context {
 	struct csv_parser parser;

@@ -1,7 +1,7 @@
 
 #include <string.h>
 
-#include "fieldlist.h"
+#include <predcfb/fieldlist.h>
 
 /* strbuf functions */
 

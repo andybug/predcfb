@@ -5,8 +5,8 @@
 
 #include <getopt.h>
 
-#include "config.h"
-#include "zipfile.h"
+#include <config.h>
+#include <predcfb/zipfile.h>
 
 static bool opt_help = false;
 static bool opt_version = false;

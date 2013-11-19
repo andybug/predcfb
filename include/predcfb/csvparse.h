@@ -2,7 +2,7 @@
 #define CSVPARSE_H
 
 #include <stddef.h>
-#include "parse.h"
+#include <predcfb/parse.h>
 
 #define CSVP_OK		0
 #define CSVP_ERROR	(-1)

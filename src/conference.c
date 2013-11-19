@@ -1,7 +1,7 @@
 
 #include <stddef.h>
 
-#include "conference.h"
+#include <predcfb/conference.h>
 
 struct conference conferences[CONFERENCE_NUM_MAX];
 int num_conferences = 0;

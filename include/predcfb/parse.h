@@ -1,7 +1,7 @@
 #ifndef PARSE_H
 #define PARSE_H
 
-#include "fieldlist.h"
+#include <predcfb/fieldlist.h>
 
 #define PARSE_OK	0
 #define PARSE_ERROR	(-1)

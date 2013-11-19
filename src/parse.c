@@ -7,8 +7,8 @@
 #include <stdio.h>
 #include <stdbool.h>
 
-#include "parse.h"
-#include "conference.h"
+#include <predcfb/parse.h>
+#include <predcfb/conference.h>
 
 const struct parse_handler parse_handlers[] = {
 	{ "conference.csv", PARSE_FILE_CSV, parse_conference_csv },

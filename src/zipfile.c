@@ -8,9 +8,9 @@
 
 #include <minizip/unzip.h>
 
-#include "zipfile.h"
-#include "parse.h"
-#include "csvparse.h"
+#include <predcfb/zipfile.h>
+#include <predcfb/parse.h>
+#include <predcfb/csvparse.h>
 
 /*
  * This structure will keep track of the library handles and all of
