@@ -44,3 +44,8 @@ ADD_SUBDIRECTORY(lib/libcsv)
 # --- build project ---
 
 ADD_SUBDIRECTORY(src)
+
+
+## --- build tests ---
+
+ADD_SUBDIRECTORY(test)

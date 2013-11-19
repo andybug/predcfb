@@ -1,8 +1,8 @@
 PROJECT(gtest)
 
-INCLUDE(./include)
+INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR})
 
---- build libtest ---
+# --- build libgtest ---
 
 ADD_LIBRARY(
 	gtest
@@ -14,4 +14,13 @@ ADD_LIBRARY(
 	src/gtest-printers.cc
 	src/gtest-test-part.cc
 	src/gtest-typed-test.cc
+)
+
+
+# --- build libgtest_main ---
+
+ADD_LIBRARY(
+	gtest_main
+	# --- sources ---
+	src/gtest_main.cc
 )
