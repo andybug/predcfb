@@ -2,22 +2,31 @@ PROJECT(predcfb)
 
 # --- build predcfb ---
 
-ADD_EXECUTABLE(
-	predcfb
+ADD_LIBRARY(
+	predcfb_lib
+	OBJECT
 	# --- sources ---
 	conference.c
 	csvparse.c
 	fieldlist.c
-	main.c
 	parse.c
 	zipfile.c
 )
 
+ADD_EXECUTABLE(
+	predcfb
+	# --- sources ---
+	main.c
+	# --- predcfb objects ---
+	$<TARGET_OBJECTS:predcfb_lib>
+)
+
 TARGET_LINK_LIBRARIES(
 	predcfb
-	# --- libraries ---
-	${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/libcsv.a
-	${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/libminiunz.a
+	# --- static libraries ---
+	csv
+	miniunz
+	# --- shared libraries ---
 	z
 )
 

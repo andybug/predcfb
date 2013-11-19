@@ -15,14 +15,20 @@ ADD_EXECUTABLE(
 	test_predcfb
 	# --- sources ---
 	fieldlist_test.cc
+	# --- predcfb objects ---
+	$<TARGET_OBJECTS:predcfb_lib>
 )
 
 TARGET_LINK_LIBRARIES(
 	test_predcfb
-	# --- libraries ---
+	# --- static libraries ---
+	csv
+	miniunz
 	gtest
 	gtest_main
+	# --- shared libraries ---
 	pthread
+	z
 )
 
 
