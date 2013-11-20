@@ -3,7 +3,7 @@ PROJECT(predcfb)
 # --- build predcfb ---
 
 ADD_LIBRARY(
-	predcfb_lib
+	libpredcfb
 	OBJECT
 	# --- sources ---
 	conference.c
@@ -13,18 +13,21 @@ ADD_LIBRARY(
 	zipfile.c
 )
 
+SET_TARGET_PROPERTIES(libpredcfb PROPERTIES PREFIX "")
+
+
 ADD_EXECUTABLE(
 	predcfb
 	# --- sources ---
 	main.c
 	# --- predcfb objects ---
-	$<TARGET_OBJECTS:predcfb_lib>
+	$<TARGET_OBJECTS:libpredcfb>
 )
 
 TARGET_LINK_LIBRARIES(
 	predcfb
 	# --- static libraries ---
-	csv
+	libcsv
 	miniunz
 	polarssl
 	# --- shared libraries ---

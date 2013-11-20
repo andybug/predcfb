@@ -3,7 +3,9 @@ PROJECT(libcsv)
 # --- build libcsv ---
 
 ADD_LIBRARY(
-	csv
+	libcsv
 	# --- sources ---
 	libcsv.c
 )
+
+SET_TARGET_PROPERTIES(libcsv PROPERTIES PREFIX "")
