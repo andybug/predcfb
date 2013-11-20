@@ -9,6 +9,7 @@ ADD_LIBRARY(
 	conference.c
 	csvparse.c
 	fieldlist.c
+	objectdb.c
 	parse.c
 	zipfile.c
 )

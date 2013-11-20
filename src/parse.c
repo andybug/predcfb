@@ -9,6 +9,7 @@
 
 #include <predcfb/parse.h>
 #include <predcfb/conference.h>
+#include <predcfb/objectdb.h>
 
 const struct parse_handler parse_handlers[] = {
 	{ "conference.csv", PARSE_FILE_CSV, parse_conference_csv },
@@ -115,6 +116,7 @@ int parse_conference_csv(struct fieldlist *f)
 	struct conference *conf;
 	const char *str;
 	size_t len;
+	int id;
 
 	assert(f->num_fields == 3);
 
@@ -131,7 +133,7 @@ int parse_conference_csv(struct fieldlist *f)
 
 	/* id field */
 	str = fieldlist_iter_begin(f);
-	if (parse_int(str, &conf->id) != PARSE_OK)
+	if (parse_int(str, &id) != PARSE_OK)
 		return PARSE_ERROR;
 
 	/* conference name */
@@ -150,7 +152,11 @@ int parse_conference_csv(struct fieldlist *f)
 	else
 		return PARSE_ERROR;
 
-	printf("%d %s (%d)\n", conf->id, conf->name, (int)conf->div);
+	printf("%d %s (%d)\n", id, conf->name, (int)conf->div);
+
+	/* add the conference to the objectdb */
+	if (objectdb_add_conference(conf) != OBJECTDB_OK)
+		return PARSE_ERROR;
 
 	return PARSE_OK;
 }

@@ -8,7 +8,7 @@
 #define OBJECTDB_ERROR (-1)
 
 extern int objectdb_add_conference(struct conference *c);
-extern struct conference *objectdb_get_conference(objectid *id);
+extern struct conference *objectdb_get_conference(const objectid *id);
 
 extern void objectdb_clear(void);
 
