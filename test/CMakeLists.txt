@@ -25,7 +25,6 @@ TARGET_LINK_LIBRARIES(
 	libcsv
 	miniunz
 	gtest
-	gtest_main
 	# --- shared libraries ---
 	pthread
 	z
