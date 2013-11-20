@@ -117,6 +117,7 @@ int parse_conference_csv(struct fieldlist *f)
 	const char *str;
 	size_t len;
 	int id;
+	objectid oid;
 
 	assert(f->num_fields == 3);
 
@@ -155,7 +156,7 @@ int parse_conference_csv(struct fieldlist *f)
 	printf("%d %s (%d)\n", id, conf->name, (int)conf->div);
 
 	/* add the conference to the objectdb */
-	if (objectdb_add_conference(conf) != OBJECTDB_OK)
+	if (objectdb_add_conference(conf, &oid) != OBJECTDB_OK)
 		return PARSE_ERROR;
 
 	return PARSE_OK;

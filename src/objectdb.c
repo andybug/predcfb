@@ -3,7 +3,11 @@
 
 #include <predcfb/objectdb.h>
 
-int objectdb_add_conference(struct conference *c)
+void objectdb_clear(void)
+{
+}
+
+int objectdb_add_conference(struct conference *c, objectid *id)
 {
 	return OBJECTDB_OK;
 }
