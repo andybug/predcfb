@@ -18,7 +18,8 @@ struct strbuf {
 enum fieldlist_error {
 	FIELDLIST_ENONE,
 	FIELDLIST_EMAXFIELDS,
-	FIELDLIST_ESTRBUFSPACE
+	FIELDLIST_ESTRBUFSPACE,
+	FIELDLIST_ENULLSTR
 };
 
 struct fieldlist {
