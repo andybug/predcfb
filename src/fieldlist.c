@@ -13,7 +13,7 @@ const char *strbuf_add(struct strbuf *s, const char *str, size_t len)
 
 	total_len = len + 1;
 	new_used = s->used + total_len;
-	if (new_used >= STRBUF_SIZE)
+	if (new_used > STRBUF_SIZE)
 		return NULL;
 
 	alloc_str = memcpy(s->buf + s->used, str, len);
@@ -33,6 +33,11 @@ void strbuf_clear(struct strbuf *s)
 int fieldlist_add(struct fieldlist *f, const char *str, size_t len)
 {
 	const char *strbuf_str;
+
+	if (!str) {
+		f->error = FIELDLIST_ENULLSTR;
+		return FIELDLIST_ERROR;
+	}
 
 	if (f->num_fields >= FIELDLIST_MAX_FIELDS) {
 		f->error = FIELDLIST_EMAXFIELDS;
