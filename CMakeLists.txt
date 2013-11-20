@@ -39,6 +39,7 @@ INCLUDE_DIRECTORIES("${PROJECT_BINARY_DIR}")
 
 ADD_SUBDIRECTORY(lib/minizip)
 ADD_SUBDIRECTORY(lib/libcsv)
+ADD_SUBDIRECTORY(lib/polarssl)
 
 
 # --- build project ---

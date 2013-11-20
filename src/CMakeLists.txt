@@ -26,6 +26,7 @@ TARGET_LINK_LIBRARIES(
 	# --- static libraries ---
 	csv
 	miniunz
+	polarssl
 	# --- shared libraries ---
 	z
 )
