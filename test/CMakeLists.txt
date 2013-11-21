@@ -25,6 +25,7 @@ TARGET_LINK_LIBRARIES(
 	# --- static libraries ---
 	libcsv
 	miniunz
+	polarssl
 	gtest
 	# --- shared libraries ---
 	pthread

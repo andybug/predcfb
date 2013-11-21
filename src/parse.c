@@ -153,11 +153,14 @@ int parse_conference_csv(struct fieldlist *f)
 	else
 		return PARSE_ERROR;
 
-	printf("%d %s (%d)\n", id, conf->name, (int)conf->div);
-
 	/* add the conference to the objectdb */
 	if (objectdb_add_conference(conf, &oid) != OBJECTDB_OK)
 		return PARSE_ERROR;
+
+	char oid_str[OBJECTDB_MD_STR_SIZE];
+	objectid_string(&oid, oid_str);
+
+	printf("%s  %s (%d)\n", oid_str, conf->name, (int)conf->div);
 
 	return PARSE_OK;
 }
