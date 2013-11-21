@@ -8,7 +8,15 @@
 
 /* objectid display functions */
 
-static void objectid_to_string(const objectid *id, char buf[OBJECTDB_MD_STR_SIZE])
+void objectid_print(const objectid *id)
+{
+	char str[OBJECTDB_MD_STR_SIZE];
+
+	objectid_string(id, str);
+	fputs(str, stdout);
+}
+
+void objectid_string(const objectid *id, char buf[OBJECTDB_MD_STR_SIZE])
 {
 	int i, j;
 	unsigned int high, low;
@@ -28,19 +36,6 @@ static void objectid_to_string(const objectid *id, char buf[OBJECTDB_MD_STR_SIZE
 	}
 
 	buf[OBJECTDB_MD_STR_SIZE - 1] = '\0';
-}
-
-void objectid_print(const objectid *id)
-{
-	char str[OBJECTDB_MD_STR_SIZE];
-
-	objectid_to_string(id, str);
-	fputs(str, stdout);
-}
-
-void objectid_string(const objectid *id, char buf[OBJECTDB_MD_STR_SIZE])
-{
-	objectid_to_string(id, buf);
 }
 
 /* objectid hashing functions */
