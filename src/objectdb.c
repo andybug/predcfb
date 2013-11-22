@@ -165,7 +165,8 @@ static struct object *map_lookup(const objectid *id)
 static int map_insert(struct object *obj)
 {
 	struct object **bin;
-	struct object *current;
+	struct object *cur;
+	struct object *prev;
 
 	bin = map_get_bin(&obj->id);
 
@@ -174,12 +175,20 @@ static int map_insert(struct object *obj)
 		*bin = obj;
 	} else {
 		/* otherwise, insert at the end of the list */
-		current = *bin;
-		while (current->next) {
-			current = current->next;
+		cur = *bin;
+		prev = NULL;
+		while (cur) {
+			if (objectid_compare(&obj->id, &cur->id) == true) {
+				objectdb_errno = OBJECTDB_EDUPLICATE;
+				return OBJECTDB_ERROR;
+			}
+
+			prev = cur;
+			cur = cur->next;
 		}
 
-		current->next = obj;
+		assert(prev != NULL);
+		prev->next = obj;
 	}
 
 	obj->next = NULL;
