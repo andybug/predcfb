@@ -7,35 +7,36 @@
 #include <unistd.h>
 
 #include <minizip/unzip.h>
-
 #include <predcfb/zipfile.h>
-#include <predcfb/parse.h>
-#include <predcfb/csvparse.h>
 
 /*
  * This structure will keep track of the library handles and all of
  * the other variables used during the reading of a zipfile
  */
-typedef struct zipfile_read_context {
+struct zipfile_read_context {
 	unzFile unzip_handle;
 	bool archive_open;
 	bool file_open;
 	enum zipfile_err error;
-} zf_readctx;
+};
 
 /* archive functions */
 
 static int zipfile_check_access(zf_readctx *z, const char *path)
 {
-	int err;
-
-	err = access(path, R_OK);
-
-	if (err) {
-		if (errno == EACCES)
+	if (access(path, R_OK) != 0) {
+		switch (errno) {
+		case EACCES:
 			z->error = ZIPFILE_EACCESS;
-		else
+			break;
+
+		case ELOOP:
+		case ENAMETOOLONG:
+		case ENOENT:
+		case ENOTDIR:
 			z->error = ZIPFILE_EPATH;
+			break;
+		}
 
 		return ZIPFILE_ERROR;
 	}
@@ -43,14 +44,15 @@ static int zipfile_check_access(zf_readctx *z, const char *path)
 	return ZIPFILE_OK;
 }
 
-static int zipfile_open_archive(zf_readctx *z, const char *path)
+int zipfile_open_archive(zf_readctx *z, const char *path)
 {
-	int err;
+	if (z->archive_open == true) {
+		z->error = ZIPFILE_ESTILLOPEN;
+		return ZIPFILE_ERROR;
+	}
 
 	z->unzip_handle = unzOpen(path);
-
 	if (!z->unzip_handle) {
-		err = zipfile_check_access(z, path);
 
 		/* if there is no access error, then the unzip library
 		 * is refusing to read the file. this probably means that
@@ -59,7 +61,7 @@ static int zipfile_open_archive(zf_readctx *z, const char *path)
 		 * was already set
 		 */
 
-		if (!err)
+		if (zipfile_check_access(z, path) != ZIPFILE_OK)
 			z->error = ZIPFILE_EFILEBAD;
 
 		return ZIPFILE_ERROR;
@@ -70,7 +72,7 @@ static int zipfile_open_archive(zf_readctx *z, const char *path)
 	return ZIPFILE_OK;
 }
 
-static int zipfile_close_archive(zf_readctx *z)
+int zipfile_close_archive(zf_readctx *z)
 {
 	assert(z->archive_open == true);
 	assert(z->file_open == false);
@@ -87,7 +89,7 @@ static int zipfile_close_archive(zf_readctx *z)
 
 /* functions for extracting files inside the archive */
 
-static int zipfile_open_file(zf_readctx *z, const char *file)
+int zipfile_open_file(zf_readctx *z, const char *file)
 {
 	assert(z->archive_open == true);
 	assert(z->file_open == false);
@@ -107,7 +109,7 @@ static int zipfile_open_file(zf_readctx *z, const char *file)
 	return ZIPFILE_OK;
 }
 
-static int zipfile_close_file(zf_readctx *z)
+int zipfile_close_file(zf_readctx *z)
 {
 	assert(z->archive_open == true);
 	assert(z->file_open == true);
@@ -122,7 +124,7 @@ static int zipfile_close_file(zf_readctx *z)
 
 /* functions for reading data from the zipfile */
 
-static ssize_t zipfile_read_block(zf_readctx *z, char *buf, size_t count)
+ssize_t zipfile_read_file(zf_readctx *z, char *buf, size_t count)
 {
 	int err;
 	ssize_t bytes_read = 0;
@@ -147,6 +149,7 @@ static ssize_t zipfile_read_block(zf_readctx *z, char *buf, size_t count)
 	return bytes_read;
 }
 
+#if 0
 /* filetype-specific reading functions */
 
 static int zipfile_read_csv_file(zf_readctx *z, const struct parse_handler *handler)
@@ -234,3 +237,4 @@ int zipfile_read(const char *path)
 
 	return ZIPFILE_OK;
 }
+#endif

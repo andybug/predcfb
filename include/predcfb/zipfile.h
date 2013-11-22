@@ -13,10 +13,18 @@ enum zipfile_err {
 	ZIPFILE_ENOENT,
 	ZIPFILE_ENOTYPE,
 	ZIPFILE_EPARSE,
+	ZIPFILE_ESTILLOPEN,
+	ZIPFILE_ENOTOPEN,
 	ZIPFILE_EUNKNOWN
 };
 
-extern int zipfile_read(const char *file);
+typedef struct zipfile_read_context zf_readctx;
+
+extern int zipfile_open_archive(zf_readctx *z, const char *path);
+extern int zipfile_close_archive(zf_readctx *z);
+extern int zipfile_open_file(zf_readctx *z, const char *file);
+extern int zipfile_close_file(zf_readctx *z);
+extern ssize_t zipfile_read_file(zf_readctx *z, char *buf, size_t count);
 extern const char *zipfile_strerr(void);
 
 #endif
