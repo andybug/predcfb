@@ -3,6 +3,7 @@
 #include <assert.h>
 #include <errno.h>
 #include <stdbool.h>
+#include <stdlib.h>
 
 #include <unistd.h>
 
@@ -84,8 +85,14 @@ static int zipfile_check_access(zf_readctx *z, const char *path)
 	return ZIPFILE_OK;
 }
 
-int zipfile_open_archive(zf_readctx *z, const char *path)
+zf_readctx *zipfile_open_archive(const char *path)
 {
+	zf_readctx *z;
+
+	z = malloc(sizeof(*z));
+	if (!z)
+		return NULL;
+
 	z->unzip_handle = unzOpen(path);
 	if (!z->unzip_handle) {
 
@@ -99,12 +106,14 @@ int zipfile_open_archive(zf_readctx *z, const char *path)
 		if (zipfile_check_access(z, path) != ZIPFILE_OK)
 			z->error = ZIPFILE_EFILEBAD;
 
-		return ZIPFILE_ERROR;
+		return z;
 	}
 
 	z->archive_open = true;
+	z->file_open = false;
+	z->error = ZIPFILE_ENONE;
 
-	return ZIPFILE_OK;
+	return z;
 }
 
 int zipfile_close_archive(zf_readctx *z)
@@ -119,6 +128,7 @@ int zipfile_close_archive(zf_readctx *z)
 	}
 
 	z->archive_open = false;
+	free(z);
 
 	return ZIPFILE_OK;
 }
