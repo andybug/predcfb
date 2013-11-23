@@ -8,7 +8,8 @@
 
 enum parse_err {
 	PARSE_ENONE,
-	PARSE_EZIPFILE
+	PARSE_EZIPFILE,
+	PARSE_ENOMEM
 };
 
 extern enum parse_err parse_errno;

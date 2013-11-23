@@ -11,6 +11,7 @@
 #include <predcfb/conference.h>
 #include <predcfb/objectdb.h>
 #include <predcfb/zipfile.h>
+#include <predcfb/csvparse.h>
 
 enum parse_file_type {
 	PARSE_FILE_NONE,
@@ -182,12 +183,78 @@ int parse_conference_csv(struct fieldlist *f)
 
 /* zipfile parsing */
 
+static void handle_zipfile_error(zf_readctx *zf, const char *func)
+{
+	const char *err;
+
+	err = zipfile_strerr(zf);
+	fprintf(stderr, "%s: %s\n", func, err);
+
+	parse_errno = PARSE_EZIPFILE;
+}
+
+static int read_csv_file_from_zipfile(zf_readctx *zf,
+                                      const struct parse_handler *handler)
+{
+	static const int CSV_BUF_SIZE = 4096;
+	char buf[CSV_BUF_SIZE];
+	ssize_t bytes;
+	csvp_ctx *csvp;
+
+	if (zipfile_open_file(zf, handler->file) != ZIPFILE_OK) {
+		handle_zipfile_error(zf, __func__);
+		return PARSE_ERROR;
+	}
+
+	csvp = csvp_create(handler->parsing_func);
+	if (!csvp) {
+		/* TODO: handle csvp error correctly */
+		return PARSE_ERROR;
+	}
+
+	while ((bytes = zipfile_read_file(zf, buf, CSV_BUF_SIZE))) {
+		if (bytes == ZIPFILE_ERROR)
+			return PARSE_ERROR;
+
+		if (bytes == 0) /* eof */
+			break;
+
+		if (csvp_parse(csvp, buf, bytes) != CSVP_OK) {
+			/* TODO: handle csvp error correctly */
+			return PARSE_ERROR;
+		}
+	}
+
+	if (csvp_destroy(csvp) != CSVP_OK) {
+		/* TODO: handle csvp error correctly */
+		return PARSE_ERROR;
+	}
+
+	if (zipfile_close_file(zf) != ZIPFILE_OK) {
+		handle_zipfile_error(zf, __func__);
+		return PARSE_ERROR;
+	}
+
+	return PARSE_OK;
+}
+
 static int read_files_from_zipfile(zf_readctx *zf)
 {
 	const struct parse_handler *handler = cfbstats_handlers;
 
 	while (handler->type != PARSE_FILE_NONE) {
-		puts(handler->file);
+		switch (handler->type) {
+		case PARSE_FILE_CSV:
+			if (read_csv_file_from_zipfile(zf, handler) != PARSE_OK)
+				return PARSE_ERROR;
+			break;
+
+		case PARSE_FILE_NONE:
+		default:
+			/* this can't happen... */
+			break;
+		}
+
 		handler++;
 	}
 
@@ -200,9 +267,11 @@ int parse_zipfile(const char *path)
 
 	zf = zipfile_open_archive(path);
 	if (!zf || (zipfile_get_error(zf) != ZIPFILE_ENONE)) {
-		const char *err = zipfile_strerr(zf);
-		fprintf(stderr, "%s: %s\n", __func__, err);
-		parse_errno = PARSE_EZIPFILE;
+		if (zf)
+			handle_zipfile_error(zf, __func__);
+		else
+			parse_errno = PARSE_ENOMEM;
+
 		return PARSE_ERROR;
 	}
 
@@ -210,9 +279,7 @@ int parse_zipfile(const char *path)
 		return PARSE_ERROR;
 
 	if (zipfile_close_archive(zf) != ZIPFILE_OK) {
-		const char *err = zipfile_strerr(zf);
-		fprintf(stderr, "%s: %s\n", __func__, err);
-		parse_errno = PARSE_EZIPFILE;
+		handle_zipfile_error(zf, __func__);
 		return PARSE_ERROR;
 	}
 
