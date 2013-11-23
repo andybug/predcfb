@@ -20,6 +20,46 @@ struct zipfile_read_context {
 	enum zipfile_err error;
 };
 
+/* error functions */
+
+const char *zipfile_strerr(zf_readctx *z)
+{
+	(void) z;
+}
+
+static int check_open_states(zf_readctx *z, bool archive, bool file)
+{
+	int retval = ZIPFILE_OK;
+
+	/* check open state of the archive */
+	if (archive) {
+		if (z->archive_open == false) {
+			retval = ZIPFILE_ERROR;
+			z->error = ZIPFILE_ENOTOPEN;
+		}
+	} else {
+		if (z->archive_open == true) {
+			retval = ZIPFILE_ERROR;
+			z->error = ZIPFILE_ESTILLOPEN;
+		}
+	}
+
+	/* check open state of the file */
+	if (file) {
+		if (z->file_open == false) {
+			retval = ZIPFILE_ERROR;
+			z->error = ZIPFILE_ENOTOPEN;
+		}
+	} else {
+		if (z->file_open == true) {
+			retval = ZIPFILE_ERROR;
+			z->error = ZIPFILE_ESTILLOPEN;
+		}
+	}
+
+	return retval;
+}
+
 /* archive functions */
 
 static int zipfile_check_access(zf_readctx *z, const char *path)
@@ -46,11 +86,6 @@ static int zipfile_check_access(zf_readctx *z, const char *path)
 
 int zipfile_open_archive(zf_readctx *z, const char *path)
 {
-	if (z->archive_open == true) {
-		z->error = ZIPFILE_ESTILLOPEN;
-		return ZIPFILE_ERROR;
-	}
-
 	z->unzip_handle = unzOpen(path);
 	if (!z->unzip_handle) {
 
@@ -74,8 +109,9 @@ int zipfile_open_archive(zf_readctx *z, const char *path)
 
 int zipfile_close_archive(zf_readctx *z)
 {
-	assert(z->archive_open == true);
-	assert(z->file_open == false);
+	/* archive open and file closed */
+	if (check_open_states(z, true, false) != ZIPFILE_OK)
+		return ZIPFILE_ERROR;
 
 	if (unzClose(z->unzip_handle) != UNZ_OK) {
 		z->error = ZIPFILE_EINTERNAL;
@@ -91,8 +127,9 @@ int zipfile_close_archive(zf_readctx *z)
 
 int zipfile_open_file(zf_readctx *z, const char *file)
 {
-	assert(z->archive_open == true);
-	assert(z->file_open == false);
+	/* archive open and file closed */
+	if (check_open_states(z, true, false) != ZIPFILE_OK)
+		return ZIPFILE_ERROR;
 
 	if (unzLocateFile(z->unzip_handle, file, 1) != UNZ_OK) {
 		z->error = ZIPFILE_ENOENT;
@@ -111,8 +148,9 @@ int zipfile_open_file(zf_readctx *z, const char *file)
 
 int zipfile_close_file(zf_readctx *z)
 {
-	assert(z->archive_open == true);
-	assert(z->file_open == true);
+	/* archive open and file open */
+	if (check_open_states(z, true, true) != ZIPFILE_OK)
+		return ZIPFILE_ERROR;
 
 	if (unzCloseCurrentFile(z->unzip_handle) != UNZ_OK)
 		return ZIPFILE_ERROR;
@@ -129,8 +167,9 @@ ssize_t zipfile_read_file(zf_readctx *z, char *buf, size_t count)
 	int err;
 	ssize_t bytes_read = 0;
 
-	assert(z->archive_open == true);
-	assert(z->file_open == true);
+	/* archive open and file open */
+	if (check_open_states(z, true, true) != ZIPFILE_OK) {
+		return ZIPFILE_ERROR;
 
 	err = unzReadCurrentFile(z->unzip_handle, buf, count);
 
