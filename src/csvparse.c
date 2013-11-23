@@ -5,12 +5,13 @@
 
 #include <predcfb/csvparse.h>
 #include <predcfb/fieldlist.h>
+#include <predcfb/parse.h>
 
 struct csvparse_context {
 	struct csv_parser parser;
 	enum csvp_error error;
 	struct fieldlist fieldlist;
-	const struct parse_handler *handler;
+	int (*handler)(struct fieldlist*);
 };
 
 static void add_to_fieldlist(void *str, size_t len, void *mydata)
@@ -42,14 +43,14 @@ static void send_fieldlist_to_parse(int ch, void *mydata)
 	(void) ch;
 
 	if (c->error == CSVP_ENONE) {
-		if (c->handler->parsing_func(&c->fieldlist) != PARSE_OK)
+		if (c->handler(&c->fieldlist) != PARSE_OK)
 			c->error = CSVP_EPARSE;
 	}
 
 	fieldlist_clear(&c->fieldlist);
 }
 
-csvp_ctx *csvp_create(const struct parse_handler *handler)
+csvp_ctx *csvp_create(int (*handler)(struct fieldlist*))
 {
 	csvp_ctx *c;
 

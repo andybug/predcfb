@@ -97,7 +97,7 @@ int main(int argc, char **argv)
 	if (opt_version)
 		print_version();
 
-	if (parse_archive(opt_archive) != PARSE_OK)
+	if (parse_zipfile(opt_archive) != PARSE_OK)
 		exit(EXIT_FAILURE);
 
 	exit(EXIT_SUCCESS);
