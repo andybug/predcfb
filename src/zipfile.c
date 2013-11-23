@@ -26,6 +26,12 @@ struct zipfile_read_context {
 const char *zipfile_strerr(zf_readctx *z)
 {
 	(void) z;
+	return "FIXME: generic zipfile error";
+}
+
+enum zipfile_err zipfile_get_error(zf_readctx *z)
+{
+	return z->error;
 }
 
 static int check_open_states(zf_readctx *z, bool archive, bool file)
@@ -178,7 +184,7 @@ ssize_t zipfile_read_file(zf_readctx *z, char *buf, size_t count)
 	ssize_t bytes_read = 0;
 
 	/* archive open and file open */
-	if (check_open_states(z, true, true) != ZIPFILE_OK) {
+	if (check_open_states(z, true, true) != ZIPFILE_OK)
 		return ZIPFILE_ERROR;
 
 	err = unzReadCurrentFile(z->unzip_handle, buf, count);

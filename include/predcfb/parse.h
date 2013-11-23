@@ -3,23 +3,17 @@
 
 #include <predcfb/fieldlist.h>
 
-#define PARSE_OK	0
+#define PARSE_OK	  0
 #define PARSE_ERROR	(-1)
 
-enum parse_file_type {
-	PARSE_FILE_NONE,
-	PARSE_FILE_CSV
+enum parse_err {
+	PARSE_ENONE,
+	PARSE_EZIPFILE
 };
 
-struct parse_handler {
-	const char *file;
-	enum parse_file_type type;
-	int (*parsing_func)(struct fieldlist *);
-};
-
-extern const struct parse_handler parse_handlers[];
-extern const int num_parse_handlers;
+extern enum parse_err parse_errno;
 
 extern int parse_conference_csv(struct fieldlist *f);
+extern int parse_zipfile(const char *archive);
 
 #endif

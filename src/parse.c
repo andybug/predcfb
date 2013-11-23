@@ -10,14 +10,29 @@
 #include <predcfb/parse.h>
 #include <predcfb/conference.h>
 #include <predcfb/objectdb.h>
+#include <predcfb/zipfile.h>
 
-const struct parse_handler parse_handlers[] = {
+enum parse_file_type {
+	PARSE_FILE_NONE,
+	PARSE_FILE_CSV
+};
+
+struct parse_handler {
+	const char *file;
+	enum parse_file_type type;
+	int (*parsing_func)(struct fieldlist *);
+};
+
+const struct parse_handler cfbstats_handlers[] = {
 	{ "conference.csv", PARSE_FILE_CSV, parse_conference_csv },
 	{ NULL, PARSE_FILE_NONE, NULL }
 };
 
 /* subtract 1 from total to account for ending null struct */
-const int num_parse_handlers = (sizeof(parse_handlers) / sizeof(struct parse_handler)) - 1;
+const int num_cfbstats_handlers = (sizeof(cfbstats_handlers) /
+                                   sizeof(struct parse_handler)) - 1;
+
+enum parse_err parse_errno = PARSE_ENONE;
 
 /* conversion functions */
 
@@ -161,6 +176,45 @@ int parse_conference_csv(struct fieldlist *f)
 	objectid_string(&oid, oid_str);
 
 	printf("%s  %s (%d)\n", oid_str, conf->name, (int)conf->div);
+
+	return PARSE_OK;
+}
+
+/* zipfile parsing */
+
+static int read_files_from_zipfile(zf_readctx *zf)
+{
+	const struct parse_handler *handler = cfbstats_handlers;
+
+	while (handler->type != PARSE_FILE_NONE) {
+		puts(handler->file);
+		handler++;
+	}
+
+	return PARSE_OK;
+}
+
+int parse_zipfile(const char *path)
+{
+	zf_readctx *zf;
+
+	zf = zipfile_open_archive(path);
+	if (!zf || (zipfile_get_error(zf) != ZIPFILE_ENONE)) {
+		const char *err = zipfile_strerr(zf);
+		fprintf(stderr, "%s: %s\n", __func__, err);
+		parse_errno = PARSE_EZIPFILE;
+		return PARSE_ERROR;
+	}
+
+	if (read_files_from_zipfile(zf) != ZIPFILE_OK)
+		return PARSE_ERROR;
+
+	if (zipfile_close_archive(zf) != ZIPFILE_OK) {
+		const char *err = zipfile_strerr(zf);
+		fprintf(stderr, "%s: %s\n", __func__, err);
+		parse_errno = PARSE_EZIPFILE;
+		return PARSE_ERROR;
+	}
 
 	return PARSE_OK;
 }

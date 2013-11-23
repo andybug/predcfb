@@ -6,7 +6,7 @@
 #include <getopt.h>
 
 #include <config.h>
-#include <predcfb/zipfile.h>
+#include <predcfb/parse.h>
 
 static bool opt_help = false;
 static bool opt_version = false;
@@ -88,10 +88,7 @@ static void print_version(void)
 
 int main(int argc, char **argv)
 {
-	int err;
-
-	err = parse_options(argc, argv);
-	if (err)
+	if (parse_options(argc, argv) != 0)
 		exit(EXIT_FAILURE);
 
 	if (opt_help)
@@ -100,8 +97,7 @@ int main(int argc, char **argv)
 	if (opt_version)
 		print_version();
 
-	err = zipfile_read(opt_archive);
-	if (err)
+	if (parse_archive(opt_archive) != PARSE_OK)
 		exit(EXIT_FAILURE);
 
 	exit(EXIT_SUCCESS);
