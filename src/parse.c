@@ -128,6 +128,7 @@ static int cfbstats_map_insert(int id, const objectid *oid)
 		if (entry->id == 0) {
 			entry->id = id;
 			entry->oid = *oid;
+			break;
 		}
 
 		i = (i + 1) & mask;
@@ -277,6 +278,48 @@ static int check_team_csv_header(struct fieldlist *f)
 
 int parse_team_csv(struct fieldlist *f)
 {
+	static bool processed_header = false;
+	const char *str;
+	size_t len;
+	int id;
+	int conf_id;
+	objectid oid;
+	const objectid *conf_oid;
+	char name[128];
+	struct conference *c;
+
+	assert(f->num_fields == 3);
+
+	if (!processed_header) {
+		processed_header = true;
+		return check_team_csv_header(f);
+	}
+
+	/* id field */
+	str = fieldlist_iter_begin(f);
+	if (parse_int(str, &id) != PARSE_OK)
+		return PARSE_ERROR;
+
+	/* team name */
+	str = fieldlist_iter_next(f);
+	len = strlen(str);
+	if (len >= 128)
+		return PARSE_ERROR;
+	strncpy(name, str, 128);
+
+	/* conf id */
+	str = fieldlist_iter_next(f);
+	if (parse_int(str, &conf_id) != PARSE_OK)
+		return PARSE_ERROR;
+
+	conf_oid = cfbstats_map_lookup(conf_id);
+	assert(conf_oid != NULL);
+
+	c = objectdb_get_conference(conf_oid);
+	assert(c != NULL);
+
+	printf("%s: %s\n", name, c->name);
+
 	return PARSE_OK;
 }
 
