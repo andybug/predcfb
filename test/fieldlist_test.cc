@@ -19,24 +19,35 @@ namespace {
 
 			struct fieldlist fieldlist;
 			std::vector<const char*> strings;
+			std::vector<const char*> numbers;
 
-			void addThreeStrings();
+			void addStrings();
+			void addNumbers();
 	};
 
 	void FieldListTest::SetUp()
 	{
-		memset(&fieldlist, 0, sizeof(struct fieldlist));
+		fieldlist_clear(&fieldlist);
 
 		strings.push_back("test one");
 		strings.push_back("test two");
 		strings.push_back("test three");
+
+		numbers.push_back("0");
+		numbers.push_back("127");
+		numbers.push_back("-10");
+		numbers.push_back("32767");
+		numbers.push_back("32768");
+		numbers.push_back("2147483647");
+		numbers.push_back("2147483648");
+		numbers.push_back("string");
 	}
 
 	void FieldListTest::TearDown()
 	{
 	}
 
-	void FieldListTest::addThreeStrings()
+	void FieldListTest::addStrings()
 	{
 		int i;
 		size_t len;
@@ -47,6 +58,19 @@ namespace {
 			len = strlen(str);
 
 			fieldlist_add(&fieldlist, str, len);
+		}
+	}
+
+	void FieldListTest::addNumbers()
+	{
+		size_t len;
+		std::vector<const char*>::iterator it = numbers.begin();
+
+		while (it != numbers.end()) {
+			len = strlen(*it);
+			fieldlist_add(&fieldlist, *it, len);
+
+			it++;
 		}
 	}
 
@@ -63,7 +87,7 @@ namespace {
 	}
 
 	TEST_F(FieldListTest, AddThree) {
-		addThreeStrings();
+		addStrings();
 
 		ASSERT_EQ(fieldlist.num_fields, 3);
 		ASSERT_EQ(fieldlist.error, 0);
@@ -80,7 +104,7 @@ namespace {
 	}
 
 	TEST_F(FieldListTest, Clear) {
-		addThreeStrings();
+		addStrings();
 
 		/*
 		 * go ahead and set some fields to make sure
@@ -92,30 +116,77 @@ namespace {
 
 		fieldlist_clear(&fieldlist);
 
-		ASSERT_EQ(fieldlist.num_fields, 0);
-		ASSERT_EQ(fieldlist.error, 0);
-		ASSERT_EQ(fieldlist.iter, 0);
+		ASSERT_EQ(0, fieldlist.num_fields);
+		ASSERT_EQ(FIELDLIST_ENONE, fieldlist.error);
+		ASSERT_EQ(FIELDLIST_ITER_FIRST, fieldlist.iter);
 	}
 
 	TEST_F(FieldListTest, Iterator) {
-		addThreeStrings();
+		addStrings();
 
 		const char *str;
 		std::vector<const char*>::iterator it;
 		int count = 0;
 
-		str = fieldlist_iter_begin(&fieldlist);
+		fieldlist_iter_begin(&fieldlist);
 		it = strings.begin();
 
-		while (str) {
+		while ((str = fieldlist_iter_next(&fieldlist))) {
 			ASSERT_STREQ(str, *it);
 			count++;
-
-			str = fieldlist_iter_next(&fieldlist);
 			it++;
 		}
 
 		ASSERT_EQ(count, 3);
+
+		str = fieldlist_iter_next(&fieldlist);
+		ASSERT_EQ(NULL, str);
+		ASSERT_EQ(FIELDLIST_EITEREND, fieldlist.error);
+	}
+
+	TEST_F(FieldListTest, IteratorInt) {
+		addNumbers();
+
+		int err;
+		int val;
+
+		fieldlist_iter_begin(&fieldlist);
+
+		err = fieldlist_iter_next_int(&fieldlist, &val);
+		ASSERT_EQ(FIELDLIST_OK, err);
+		ASSERT_EQ(0, val);
+
+		err = fieldlist_iter_next_int(&fieldlist, &val);
+		ASSERT_EQ(FIELDLIST_OK, err);
+		ASSERT_EQ(127, val);
+
+		err = fieldlist_iter_next_int(&fieldlist, &val);
+		ASSERT_EQ(FIELDLIST_OK, err);
+		ASSERT_EQ(-10, val);
+
+		err = fieldlist_iter_next_int(&fieldlist, &val);
+		ASSERT_EQ(FIELDLIST_OK, err);
+		ASSERT_EQ(32767, val);
+
+		err = fieldlist_iter_next_int(&fieldlist, &val);
+		ASSERT_EQ(FIELDLIST_OK, err);
+		ASSERT_EQ(32768, val);
+
+		err = fieldlist_iter_next_int(&fieldlist, &val);
+		ASSERT_EQ(FIELDLIST_OK, err);
+		ASSERT_EQ(2147483647, val);
+
+		err = fieldlist_iter_next_int(&fieldlist, &val);
+		ASSERT_EQ(FIELDLIST_ERROR, err);
+		ASSERT_EQ(FIELDLIST_ERANGE, fieldlist.error);
+
+		err = fieldlist_iter_next_int(&fieldlist, &val);
+		ASSERT_EQ(FIELDLIST_ERROR, err);
+		ASSERT_EQ(FIELDLIST_EWRONGTYPE, fieldlist.error);
+
+		const char *str = fieldlist_iter_next(&fieldlist);
+		ASSERT_EQ(NULL, str);
+		ASSERT_EQ(FIELDLIST_EITEREND, fieldlist.error);
 	}
 
 	TEST_F(FieldListTest, TooBig) {

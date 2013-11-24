@@ -2,7 +2,6 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <assert.h>
-#include <limits.h>
 #include <string.h>
 #include <stdio.h>
 #include <stdbool.h>
@@ -84,34 +83,6 @@ static int parse_short(const char *str, short *out)
 }
 #endif
 
-static int parse_int(const char *str, int *out)
-{
-	long int li;
-	char *endptr;
-
-	li = strtol(str, &endptr, 10);
-
-	if (*endptr != '\0') {
-		/*
-		 * a non-number character was found in the string,
-		 * so this is invalid
-		 */
-		return PARSE_ERROR;
-	}
-
-	if (li == LONG_MIN || li == LONG_MAX) {
-		if (errno == ERANGE)
-			return PARSE_ERROR;
-	}
-
-	if (li < INT_MIN || li > INT_MAX)
-		return PARSE_ERROR;
-
-	*out = (int) li;
-
-	return PARSE_OK;
-}
-
 /* cfbstats id to objectid map */
 
 static int cfbstats_map_insert(int id, const objectid *oid)
@@ -177,16 +148,15 @@ static int check_conference_csv_header(struct fieldlist *f)
 
 	assert(f->num_fields == 3);
 
-	field = fieldlist_iter_begin(f);
+	fieldlist_iter_begin(f);
 
-	while (field) {
+	while ((field = fieldlist_iter_next(f))) {
 		if (count >= 3)
 			return PARSE_ERROR;
 
 		if (strcmp(field_names[count], field) != 0)
 			return PARSE_ERROR;
 
-		field = fieldlist_iter_next(f);
 		count++;
 	}
 
@@ -215,9 +185,10 @@ int parse_conference_csv(struct fieldlist *f)
 		return PARSE_ERROR;
 	}
 
+	fieldlist_iter_begin(f);
+
 	/* id field */
-	str = fieldlist_iter_begin(f);
-	if (parse_int(str, &id) != PARSE_OK)
+	if (fieldlist_iter_next_int(f, &id) != FIELDLIST_OK)
 		return PARSE_ERROR;
 
 	/* conference name */
@@ -260,16 +231,15 @@ static int check_team_csv_header(struct fieldlist *f)
 
 	assert(f->num_fields == 3);
 
-	field = fieldlist_iter_begin(f);
+	fieldlist_iter_begin(f);
 
-	while (field) {
+	while ((field = fieldlist_iter_next(f))) {
 		if (count >= 3)
 			return PARSE_ERROR;
 
 		if (strcmp(field_names[count], field) != 0)
 			return PARSE_ERROR;
 
-		field = fieldlist_iter_next(f);
 		count++;
 	}
 
@@ -295,9 +265,10 @@ int parse_team_csv(struct fieldlist *f)
 		return check_team_csv_header(f);
 	}
 
+	fieldlist_iter_begin(f);
+
 	/* id field */
-	str = fieldlist_iter_begin(f);
-	if (parse_int(str, &id) != PARSE_OK)
+	if (fieldlist_iter_next_int(f, &id) != FIELDLIST_OK)
 		return PARSE_ERROR;
 
 	/* team name */
@@ -308,8 +279,7 @@ int parse_team_csv(struct fieldlist *f)
 	strncpy(name, str, 128);
 
 	/* conf id */
-	str = fieldlist_iter_next(f);
-	if (parse_int(str, &conf_id) != PARSE_OK)
+	if (fieldlist_iter_next_int(f, &conf_id) != FIELDLIST_OK)
 		return PARSE_ERROR;
 
 	conf_oid = cfbstats_map_lookup(conf_id);

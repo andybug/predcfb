@@ -1,5 +1,7 @@
 
+#include <stdlib.h>
 #include <string.h>
+#include <limits.h>
 
 #include <predcfb/fieldlist.h>
 
@@ -28,7 +30,7 @@ void strbuf_clear(struct strbuf *s)
 	s->used = 0;
 }
 
-/* field_list functions */
+/* fieldlist functions */
 
 int fieldlist_add(struct fieldlist *f, const char *str, size_t len)
 {
@@ -60,26 +62,59 @@ void fieldlist_clear(struct fieldlist *f)
 {
 	strbuf_clear(&f->strbuf);
 	f->num_fields = 0;
-	f->iter = 0;
+	f->iter = FIELDLIST_ITER_FIRST;
 	f->error = FIELDLIST_ENONE;
 }
 
-const char *fieldlist_iter_begin(struct fieldlist *f)
+void fieldlist_iter_begin(struct fieldlist *f)
 {
-	f->iter = 0;
-
-	return fieldlist_iter_next(f);
+	f->iter = FIELDLIST_ITER_FIRST;
 }
 
 const char *fieldlist_iter_next(struct fieldlist *f)
 {
 	const char *field;
 
-	if (f->iter >= f->num_fields)
+	f->iter++;
+	if (f->iter >= f->num_fields) {
+		f->error = FIELDLIST_EITEREND;
 		return NULL;
+	} else if (f->iter < 0) {
+		f->error = FIELDLIST_ERANGE;
+		return NULL;
+	}
 
 	field = f->fields[f->iter];
-	f->iter++;
-
 	return field;
+}
+
+int fieldlist_iter_next_int(struct fieldlist *f, int *out)
+{
+	long int li;
+	char *endptr;
+	const char *str;
+
+	if ((str = fieldlist_iter_next(f)) == NULL)
+		return FIELDLIST_ERROR;
+
+	li = strtol(str, &endptr, 10);
+
+	if (*endptr != '\0') {
+		/*
+		 * endptr points at the first bad character, so if it
+		 * points at anything other than the null byte, there
+		 * was an error trying to parse the string
+		 */
+		f->error = FIELDLIST_EWRONGTYPE;
+		return FIELDLIST_ERROR;
+	}
+
+	if (li < INT_MIN || li > INT_MAX) {
+		f->error = FIELDLIST_ERANGE;
+		return FIELDLIST_ERROR;
+	}
+
+	*out = (int) li;
+
+	return FIELDLIST_OK;
 }
