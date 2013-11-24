@@ -19,34 +19,38 @@ struct cfbstats_map_entry {
 	objectid oid;
 };
 
-enum parse_file_type {
-	PARSE_FILE_NONE,
-	PARSE_FILE_CSV
+enum cfbstats_file_type {
+	CFBSTATS_FILE_NONE,
+	CFBSTATS_FILE_CSV
 };
 
-struct parse_handler {
+struct cfbstats_handler {
 	const char *file;
-	enum parse_file_type type;
+	enum cfbstats_file_type type;
 	int (*parsing_func)(struct fieldlist *);
 };
 
-const struct parse_handler cfbstats_handlers[] = {
-	{ "conference.csv", PARSE_FILE_CSV, parse_conference_csv },
-	{ "team.csv", PARSE_FILE_CSV, parse_team_csv },
-	{ NULL, PARSE_FILE_NONE, NULL }
+/* prototypes for the handlers */
+static int parse_conference_csv(struct fieldlist *);
+static int parse_team_csv(struct fieldlist *);
+
+const struct cfbstats_handler cfbstats_handlers[] = {
+	{ "conference.csv", CFBSTATS_FILE_CSV, parse_conference_csv },
+	{ "team.csv", CFBSTATS_FILE_CSV, parse_team_csv },
+	{ NULL, CFBSTATS_FILE_NONE, NULL }
 };
 
 static struct cfbstats_map_entry cfbstats_map[CFBSTATS_MAP_SIZE];
 
 /* subtract 1 from total to account for ending null struct */
 const int num_cfbstats_handlers = (sizeof(cfbstats_handlers) /
-                                   sizeof(struct parse_handler)) - 1;
+                                   sizeof(struct cfbstats_handler)) - 1;
 
-enum parse_err parse_errno = PARSE_ENONE;
+enum cfbstats_err cfbstats_errno = CFBSTATS_ENONE;
 
 /* initialization functions */
 
-static void parse_init(void)
+static void cfbstats_init(void)
 {
 	memset(cfbstats_map, 0, sizeof(cfbstats_map));
 }
@@ -75,9 +79,9 @@ static int cfbstats_map_insert(int id, const objectid *oid)
 	}
 
 	if (count == CFBSTATS_MAP_SIZE)
-		return PARSE_ERROR;
+		return CFBSTATS_ERROR;
 
-	return PARSE_OK;
+	return CFBSTATS_OK;
 }
 
 static const objectid *cfbstats_map_lookup(int id)
@@ -120,18 +124,18 @@ static int check_conference_csv_header(struct fieldlist *f)
 
 	while ((field = fieldlist_iter_next(f))) {
 		if (count >= 3)
-			return PARSE_ERROR;
+			return CFBSTATS_ERROR;
 
 		if (strcmp(field_names[count], field) != 0)
-			return PARSE_ERROR;
+			return CFBSTATS_ERROR;
 
 		count++;
 	}
 
-	return PARSE_OK;
+	return CFBSTATS_OK;
 }
 
-int parse_conference_csv(struct fieldlist *f)
+static int parse_conference_csv(struct fieldlist *f)
 {
 	static bool processed_header = false;
 	struct conference *conf;
@@ -150,20 +154,20 @@ int parse_conference_csv(struct fieldlist *f)
 	conf = conference_create();
 	if (!conf) {
 		/* too many conferences! */
-		return PARSE_ERROR;
+		return CFBSTATS_ERROR;
 	}
 
 	fieldlist_iter_begin(f);
 
 	/* id field */
 	if (fieldlist_iter_next_int(f, &id) != FIELDLIST_OK)
-		return PARSE_ERROR;
+		return CFBSTATS_ERROR;
 
 	/* conference name */
 	str = fieldlist_iter_next(f);
 	len = strlen(str);
 	if (len >= CONFERENCE_NAME_MAX)
-		return PARSE_ERROR;
+		return CFBSTATS_ERROR;
 	strncpy(conf->name, str, CONFERENCE_NAME_MAX);
 
 	/* division */
@@ -173,17 +177,17 @@ int parse_conference_csv(struct fieldlist *f)
 	else if (strcmp("FCS", str) == 0)
 		conf->div = CONFERENCE_FCS;
 	else
-		return PARSE_ERROR;
+		return CFBSTATS_ERROR;
 
 	/* add the conference to the objectdb */
 	if (objectdb_add_conference(conf, &oid) != OBJECTDB_OK)
-		return PARSE_ERROR;
+		return CFBSTATS_ERROR;
 
 	/* add the conference to the id map */
-	if (cfbstats_map_insert(id, &oid) != PARSE_OK)
-		return PARSE_ERROR;
+	if (cfbstats_map_insert(id, &oid) != CFBSTATS_OK)
+		return CFBSTATS_ERROR;
 
-	return PARSE_OK;
+	return CFBSTATS_OK;
 }
 
 static int check_team_csv_header(struct fieldlist *f)
@@ -203,18 +207,18 @@ static int check_team_csv_header(struct fieldlist *f)
 
 	while ((field = fieldlist_iter_next(f))) {
 		if (count >= 3)
-			return PARSE_ERROR;
+			return CFBSTATS_ERROR;
 
 		if (strcmp(field_names[count], field) != 0)
-			return PARSE_ERROR;
+			return CFBSTATS_ERROR;
 
 		count++;
 	}
 
-	return PARSE_OK;
+	return CFBSTATS_OK;
 }
 
-int parse_team_csv(struct fieldlist *f)
+static int parse_team_csv(struct fieldlist *f)
 {
 	static bool processed_header = false;
 	const char *str;
@@ -237,18 +241,18 @@ int parse_team_csv(struct fieldlist *f)
 
 	/* id field */
 	if (fieldlist_iter_next_int(f, &id) != FIELDLIST_OK)
-		return PARSE_ERROR;
+		return CFBSTATS_ERROR;
 
 	/* team name */
 	str = fieldlist_iter_next(f);
 	len = strlen(str);
 	if (len >= 128)
-		return PARSE_ERROR;
+		return CFBSTATS_ERROR;
 	strncpy(name, str, 128);
 
 	/* conf id */
 	if (fieldlist_iter_next_int(f, &conf_id) != FIELDLIST_OK)
-		return PARSE_ERROR;
+		return CFBSTATS_ERROR;
 
 	conf_oid = cfbstats_map_lookup(conf_id);
 	assert(conf_oid != NULL);
@@ -258,7 +262,7 @@ int parse_team_csv(struct fieldlist *f)
 
 	printf("%s: %s\n", name, c->name);
 
-	return PARSE_OK;
+	return CFBSTATS_OK;
 }
 
 /* zipfile parsing */
@@ -270,11 +274,11 @@ static void handle_zipfile_error(zf_readctx *zf, const char *func)
 	err = zipfile_strerr(zf);
 	fprintf(stderr, "%s: %s\n", func, err);
 
-	parse_errno = PARSE_EZIPFILE;
+	cfbstats_errno = CFBSTATS_EZIPFILE;
 }
 
 static int read_csv_file_from_zipfile(zf_readctx *zf,
-                                      const struct parse_handler *handler)
+                                      const struct cfbstats_handler *handler)
 {
 	static const int CSV_BUF_SIZE = 4096;
 	char buf[CSV_BUF_SIZE];
@@ -283,53 +287,53 @@ static int read_csv_file_from_zipfile(zf_readctx *zf,
 
 	if (zipfile_open_file(zf, handler->file) != ZIPFILE_OK) {
 		handle_zipfile_error(zf, __func__);
-		return PARSE_ERROR;
+		return CFBSTATS_ERROR;
 	}
 
 	csvp = csvp_create(handler->parsing_func);
 	if (!csvp) {
 		/* TODO: handle csvp error correctly */
-		return PARSE_ERROR;
+		return CFBSTATS_ERROR;
 	}
 
 	while ((bytes = zipfile_read_file(zf, buf, CSV_BUF_SIZE))) {
 		if (bytes == ZIPFILE_ERROR)
-			return PARSE_ERROR;
+			return CFBSTATS_ERROR;
 
 		if (bytes == 0) /* eof */
 			break;
 
 		if (csvp_parse(csvp, buf, bytes) != CSVP_OK) {
 			/* TODO: handle csvp error correctly */
-			return PARSE_ERROR;
+			return CFBSTATS_ERROR;
 		}
 	}
 
 	if (csvp_destroy(csvp) != CSVP_OK) {
 		/* TODO: handle csvp error correctly */
-		return PARSE_ERROR;
+		return CFBSTATS_ERROR;
 	}
 
 	if (zipfile_close_file(zf) != ZIPFILE_OK) {
 		handle_zipfile_error(zf, __func__);
-		return PARSE_ERROR;
+		return CFBSTATS_ERROR;
 	}
 
-	return PARSE_OK;
+	return CFBSTATS_OK;
 }
 
 static int read_files_from_zipfile(zf_readctx *zf)
 {
-	const struct parse_handler *handler = cfbstats_handlers;
+	const struct cfbstats_handler *handler = cfbstats_handlers;
 
-	while (handler->type != PARSE_FILE_NONE) {
+	while (handler->type != CFBSTATS_FILE_NONE) {
 		switch (handler->type) {
-		case PARSE_FILE_CSV:
-			if (read_csv_file_from_zipfile(zf, handler) != PARSE_OK)
-				return PARSE_ERROR;
+		case CFBSTATS_FILE_CSV:
+			if (read_csv_file_from_zipfile(zf, handler) != CFBSTATS_OK)
+				return CFBSTATS_ERROR;
 			break;
 
-		case PARSE_FILE_NONE:
+		case CFBSTATS_FILE_NONE:
 		default:
 			/* this can't happen... */
 			break;
@@ -338,32 +342,34 @@ static int read_files_from_zipfile(zf_readctx *zf)
 		handler++;
 	}
 
-	return PARSE_OK;
+	return CFBSTATS_OK;
 }
 
-int parse_zipfile(const char *path)
+/* global functions */
+
+int cfbstats_read_zipfile(const char *path)
 {
 	zf_readctx *zf;
 
-	parse_init();
+	cfbstats_init();
 
 	zf = zipfile_open_archive(path);
 	if (!zf || (zipfile_get_error(zf) != ZIPFILE_ENONE)) {
 		if (zf)
 			handle_zipfile_error(zf, __func__);
 		else
-			parse_errno = PARSE_ENOMEM;
+			cfbstats_errno = CFBSTATS_ENOMEM;
 
-		return PARSE_ERROR;
+		return CFBSTATS_ERROR;
 	}
 
 	if (read_files_from_zipfile(zf) != ZIPFILE_OK)
-		return PARSE_ERROR;
+		return CFBSTATS_ERROR;
 
 	if (zipfile_close_archive(zf) != ZIPFILE_OK) {
 		handle_zipfile_error(zf, __func__);
-		return PARSE_ERROR;
+		return CFBSTATS_ERROR;
 	}
 
-	return PARSE_OK;
+	return CFBSTATS_OK;
 }

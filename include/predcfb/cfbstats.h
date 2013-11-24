@@ -1,21 +1,16 @@
-#ifndef PARSE_H
-#define PARSE_H
+#ifndef CFBSTATS_H
+#define CFBSTATS_H
 
-#include <predcfb/fieldlist.h>
+#define CFBSTATS_OK       0
+#define CFBSTATS_ERROR  (-1)
 
-#define PARSE_OK	  0
-#define PARSE_ERROR	(-1)
-
-enum parse_err {
-	PARSE_ENONE,
-	PARSE_EZIPFILE,
-	PARSE_ENOMEM
+enum cfbstats_err {
+	CFBSTATS_ENONE,
+	CFBSTATS_EZIPFILE,
+	CFBSTATS_ENOMEM
 };
 
-extern enum parse_err parse_errno;
-
-extern int parse_conference_csv(struct fieldlist *f);
-extern int parse_team_csv(struct fieldlist *f);
-extern int parse_zipfile(const char *archive);
+extern enum cfbstats_err cfbstats_errno;
+extern int cfbstats_read_zipfile(const char *archive);
 
 #endif
