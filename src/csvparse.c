@@ -5,7 +5,6 @@
 
 #include <predcfb/csvparse.h>
 #include <predcfb/fieldlist.h>
-#include <predcfb/parse.h>
 
 struct csvparse_context {
 	struct csv_parser parser;
@@ -43,7 +42,7 @@ static void send_fieldlist_to_parse(int ch, void *mydata)
 	(void) ch;
 
 	if (c->error == CSVP_ENONE) {
-		if (c->handler(&c->fieldlist) != PARSE_OK)
+		if (c->handler(&c->fieldlist) != 0)
 			c->error = CSVP_EPARSE;
 	}
 

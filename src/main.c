@@ -6,7 +6,7 @@
 #include <getopt.h>
 
 #include <config.h>
-#include <predcfb/parse.h>
+#include <predcfb/cfbstats.h>
 
 static bool opt_help = false;
 static bool opt_version = false;

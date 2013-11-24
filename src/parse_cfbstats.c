@@ -6,7 +6,7 @@
 #include <stdio.h>
 #include <stdbool.h>
 
-#include <predcfb/parse.h>
+#include <predcfb/cfbstats.h>
 #include <predcfb/conference.h>
 #include <predcfb/objectdb.h>
 #include <predcfb/zipfile.h>
