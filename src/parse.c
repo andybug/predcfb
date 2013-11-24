@@ -51,38 +51,6 @@ static void parse_init(void)
 	memset(cfbstats_map, 0, sizeof(cfbstats_map));
 }
 
-/* conversion functions */
-
-#if 0
-static int parse_short(const char *str, short *out)
-{
-	long int li;
-	char *endptr;
-
-	li = strtol(str, &endptr, 10);
-
-	if (*endptr != '\0') {
-		/*
-		 * a non-number character was found in the string,
-		 * so this is invalid
-		 */
-		return PARSE_ERROR;
-	}
-
-	if (li == LONG_MIN || li == LONG_MAX) {
-		if (errno == ERANGE)
-			return PARSE_ERROR;
-	}
-
-	if (li < SHRT_MIN || li > SHRT_MAX)
-		return PARSE_ERROR;
-
-	*out = (short) li;
-
-	return PARSE_OK;
-}
-#endif
-
 /* cfbstats id to objectid map */
 
 static int cfbstats_map_insert(int id, const objectid *oid)

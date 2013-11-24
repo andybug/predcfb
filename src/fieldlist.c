@@ -118,3 +118,34 @@ int fieldlist_iter_next_int(struct fieldlist *f, int *out)
 
 	return FIELDLIST_OK;
 }
+
+int fieldlist_iter_next_short(struct fieldlist *f, short *out)
+{
+	long int li;
+	char *endptr;
+	const char *str;
+
+	if ((str = fieldlist_iter_next(f)) == NULL)
+		return FIELDLIST_ERROR;
+
+	li = strtol(str, &endptr, 10);
+
+	if (*endptr != '\0') {
+		/*
+		 * endptr points at the first bad character, so if it
+		 * points at anything other than the null byte, there
+		 * was an error trying to parse the string
+		 */
+		f->error = FIELDLIST_EWRONGTYPE;
+		return FIELDLIST_ERROR;
+	}
+
+	if (li < SHRT_MIN || li > SHRT_MAX) {
+		f->error = FIELDLIST_ERANGE;
+		return FIELDLIST_ERROR;
+	}
+
+	*out = (short) li;
+
+	return FIELDLIST_OK;
+}

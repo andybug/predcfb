@@ -189,6 +189,51 @@ namespace {
 		ASSERT_EQ(FIELDLIST_EITEREND, fieldlist.error);
 	}
 
+	TEST_F(FieldListTest, IteratorShort) {
+		addNumbers();
+
+		int err;
+		short val;
+
+		fieldlist_iter_begin(&fieldlist);
+
+		err = fieldlist_iter_next_short(&fieldlist, &val);
+		ASSERT_EQ(FIELDLIST_OK, err);
+		ASSERT_EQ(0, val);
+
+		err = fieldlist_iter_next_short(&fieldlist, &val);
+		ASSERT_EQ(FIELDLIST_OK, err);
+		ASSERT_EQ(127, val);
+
+		err = fieldlist_iter_next_short(&fieldlist, &val);
+		ASSERT_EQ(FIELDLIST_OK, err);
+		ASSERT_EQ(-10, val);
+
+		err = fieldlist_iter_next_short(&fieldlist, &val);
+		ASSERT_EQ(FIELDLIST_OK, err);
+		ASSERT_EQ(32767, val);
+
+		err = fieldlist_iter_next_short(&fieldlist, &val);
+		ASSERT_EQ(FIELDLIST_ERROR, err);
+		ASSERT_EQ(FIELDLIST_ERANGE, fieldlist.error);
+
+		err = fieldlist_iter_next_short(&fieldlist, &val);
+		ASSERT_EQ(FIELDLIST_ERROR, err);
+		ASSERT_EQ(FIELDLIST_ERANGE, fieldlist.error);
+
+		err = fieldlist_iter_next_short(&fieldlist, &val);
+		ASSERT_EQ(FIELDLIST_ERROR, err);
+		ASSERT_EQ(FIELDLIST_ERANGE, fieldlist.error);
+
+		err = fieldlist_iter_next_short(&fieldlist, &val);
+		ASSERT_EQ(FIELDLIST_ERROR, err);
+		ASSERT_EQ(FIELDLIST_EWRONGTYPE, fieldlist.error);
+
+		const char *str = fieldlist_iter_next(&fieldlist);
+		ASSERT_EQ(NULL, str);
+		ASSERT_EQ(FIELDLIST_EITEREND, fieldlist.error);
+	}
+
 	TEST_F(FieldListTest, TooBig) {
 		char buf[STRBUF_SIZE];
 
