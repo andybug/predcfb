@@ -109,7 +109,7 @@ zf_readctx *zipfile_open_archive(const char *path)
 		 * was already set
 		 */
 
-		if (zipfile_check_access(z, path) != ZIPFILE_OK)
+		if (zipfile_check_access(z, path) == ZIPFILE_OK)
 			z->error = ZIPFILE_EFILEBAD;
 
 		return z;
