@@ -12,21 +12,21 @@
 #include <predcfb/zipfile.h>
 #include <predcfb/csvparse.h>
 
-#define CFBSTATS_MAP_SIZE 4096
+#define CFBSTATS_ID_MAP_SIZE 4096
 
-struct cfbstats_map_entry {
+struct map_entry {
 	int id;
 	objectid oid;
 };
 
-enum cfbstats_file_type {
+enum file_type {
 	CFBSTATS_FILE_NONE,
 	CFBSTATS_FILE_CSV
 };
 
-struct cfbstats_handler {
+struct file_handler {
 	const char *file;
-	enum cfbstats_file_type type;
+	enum file_type type;
 	int (*parsing_func)(struct fieldlist *);
 };
 
@@ -34,17 +34,17 @@ struct cfbstats_handler {
 static int parse_conference_csv(struct fieldlist *);
 static int parse_team_csv(struct fieldlist *);
 
-const struct cfbstats_handler cfbstats_handlers[] = {
+static const struct file_handler file_handlers[] = {
 	{ "conference.csv", CFBSTATS_FILE_CSV, parse_conference_csv },
-	{ "team.csv", CFBSTATS_FILE_CSV, parse_team_csv },
+	{ "team.csv",       CFBSTATS_FILE_CSV, parse_team_csv },
 	{ NULL, CFBSTATS_FILE_NONE, NULL }
 };
 
-static struct cfbstats_map_entry cfbstats_map[CFBSTATS_MAP_SIZE];
+static struct map_entry id_map[CFBSTATS_ID_MAP_SIZE];
 
 /* subtract 1 from total to account for ending null struct */
-const int num_cfbstats_handlers = (sizeof(cfbstats_handlers) /
-                                   sizeof(struct cfbstats_handler)) - 1;
+static const int num_file_handlers = (sizeof(file_handlers) /
+                                      sizeof(struct file_handler)) - 1;
 
 enum cfbstats_err cfbstats_errno = CFBSTATS_ENONE;
 
@@ -52,22 +52,22 @@ enum cfbstats_err cfbstats_errno = CFBSTATS_ENONE;
 
 static void cfbstats_init(void)
 {
-	memset(cfbstats_map, 0, sizeof(cfbstats_map));
+	memset(id_map, 0, sizeof(id_map));
 }
 
 /* cfbstats id to objectid map */
 
-static int cfbstats_map_insert(int id, const objectid *oid)
+static int id_map_insert(int id, const objectid *oid)
 {
-	static const int mask = CFBSTATS_MAP_SIZE - 1;
-	struct cfbstats_map_entry *entry;
+	static const int mask = CFBSTATS_ID_MAP_SIZE - 1;
+	struct map_entry *entry;
 	int i;
 	int count = 0;
 
 	i = id & mask;
 
-	while (count < CFBSTATS_MAP_SIZE) {
-		entry = &cfbstats_map[i];
+	while (count < CFBSTATS_ID_MAP_SIZE) {
+		entry = &id_map[i];
 		if (entry->id == 0) {
 			entry->id = id;
 			entry->oid = *oid;
@@ -78,23 +78,23 @@ static int cfbstats_map_insert(int id, const objectid *oid)
 		count++;
 	}
 
-	if (count == CFBSTATS_MAP_SIZE)
+	if (count == CFBSTATS_ID_MAP_SIZE)
 		return CFBSTATS_ERROR;
 
 	return CFBSTATS_OK;
 }
 
-static const objectid *cfbstats_map_lookup(int id)
+static const objectid *id_map_lookup(int id)
 {
-	static const int mask = CFBSTATS_MAP_SIZE - 1;
-	struct cfbstats_map_entry *entry;
+	static const int mask = CFBSTATS_ID_MAP_SIZE - 1;
+	struct map_entry *entry;
 	int i;
 	int count = 0;
 
 	i = id & mask;
 
-	while (count < CFBSTATS_MAP_SIZE) {
-		entry = &cfbstats_map[i];
+	while (count < CFBSTATS_ID_MAP_SIZE) {
+		entry = &id_map[i];
 		if (entry->id == id)
 			return &entry->oid;
 
@@ -105,7 +105,7 @@ static const objectid *cfbstats_map_lookup(int id)
 	return NULL;
 }
 
-/* parsing functions */
+/* parse conference.csv functions */
 
 static int check_conference_csv_header(struct fieldlist *f)
 {
@@ -184,11 +184,13 @@ static int parse_conference_csv(struct fieldlist *f)
 		return CFBSTATS_ERROR;
 
 	/* add the conference to the id map */
-	if (cfbstats_map_insert(id, &oid) != CFBSTATS_OK)
+	if (id_map_insert(id, &oid) != CFBSTATS_OK)
 		return CFBSTATS_ERROR;
 
 	return CFBSTATS_OK;
 }
+
+/* parse team.csv */
 
 static int check_team_csv_header(struct fieldlist *f)
 {
@@ -254,7 +256,7 @@ static int parse_team_csv(struct fieldlist *f)
 	if (fieldlist_iter_next_int(f, &conf_id) != FIELDLIST_OK)
 		return CFBSTATS_ERROR;
 
-	conf_oid = cfbstats_map_lookup(conf_id);
+	conf_oid = id_map_lookup(conf_id);
 	assert(conf_oid != NULL);
 
 	c = objectdb_get_conference(conf_oid);
@@ -278,7 +280,7 @@ static void handle_zipfile_error(zf_readctx *zf, const char *func)
 }
 
 static int read_csv_file_from_zipfile(zf_readctx *zf,
-                                      const struct cfbstats_handler *handler)
+                                      const struct file_handler *handler)
 {
 	static const int CSV_BUF_SIZE = 4096;
 	char buf[CSV_BUF_SIZE];
@@ -324,7 +326,7 @@ static int read_csv_file_from_zipfile(zf_readctx *zf,
 
 static int read_files_from_zipfile(zf_readctx *zf)
 {
-	const struct cfbstats_handler *handler = cfbstats_handlers;
+	const struct file_handler *handler = file_handlers;
 
 	while (handler->type != CFBSTATS_FILE_NONE) {
 		switch (handler->type) {
@@ -354,12 +356,11 @@ int cfbstats_read_zipfile(const char *path)
 	cfbstats_init();
 
 	zf = zipfile_open_archive(path);
-	if (!zf || (zipfile_get_error(zf) != ZIPFILE_ENONE)) {
-		if (zf)
-			handle_zipfile_error(zf, __func__);
-		else
-			cfbstats_errno = CFBSTATS_ENOMEM;
-
+	if (!zf) {
+		cfbstats_errno = CFBSTATS_ENOMEM;
+		return CFBSTATS_ERROR;
+	} else if (zipfile_get_error(zf) != ZIPFILE_ENONE) {
+		handle_zipfile_error(zf, __func__);
 		return CFBSTATS_ERROR;
 	}
 
