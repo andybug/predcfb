@@ -105,50 +105,56 @@ static const objectid *id_map_lookup(int id)
 	return NULL;
 }
 
-/* parse conference.csv functions */
+/* csv header verification */
 
-static int check_conference_csv_header(struct fieldlist *f)
+static int check_csv_header(struct fieldlist *f, const char **fields, int num)
 {
-	static const char *field_names[] = {
-		"Conference Code",
-		"Name",
-		"Subdivision"
-	};
-
-	int count = 0;
+	int i;
 	const char *field;
 
-	assert(f->num_fields == 3);
+	assert(f->num_fields == num);
 
 	fieldlist_iter_begin(f);
 
-	while ((field = fieldlist_iter_next(f))) {
-		if (count >= 3)
+	for (i = 0; i < num; i++) {
+		field = fieldlist_iter_next(f);
+		if (strcmp(field, fields[i]) != 0) {
+			cfbstats_errno = CFBSTATS_EINVALIDFILE;
 			return CFBSTATS_ERROR;
-
-		if (strcmp(field_names[count], field) != 0)
-			return CFBSTATS_ERROR;
-
-		count++;
+		}
 	}
 
 	return CFBSTATS_OK;
 }
 
+#define NUM_FIELDS(a) (sizeof(a) / sizeof(*a))
+
+/* parse conference.csv */
+
 static int parse_conference_csv(struct fieldlist *f)
 {
+	static const char *fields[] = {
+		"Conference Code",
+		"Name",
+		"Subdivision"
+	};
+	static const int NUM_CONFERENCE_FIELDS = NUM_FIELDS(fields);
 	static bool processed_header = false;
+
 	struct conference *conf;
 	const char *str;
 	size_t len;
 	int id;
 	objectid oid;
 
-	assert(f->num_fields == 3);
+	if (f->num_fields != NUM_CONFERENCE_FIELDS) {
+		cfbstats_errno = CFBSTATS_EINVALIDFILE;
+		return CFBSTATS_ERROR;
+	}
 
 	if (!processed_header) {
 		processed_header = true;
-		return check_conference_csv_header(f);
+		return check_csv_header(f, fields, NUM_CONFERENCE_FIELDS);
 	}
 
 	conf = conference_create();
@@ -192,37 +198,16 @@ static int parse_conference_csv(struct fieldlist *f)
 
 /* parse team.csv */
 
-static int check_team_csv_header(struct fieldlist *f)
+static int parse_team_csv(struct fieldlist *f)
 {
-	static const char *field_names[] = {
+	static const char *fields[] = {
 		"Team Code",
 		"Name",
 		"Conference Code"
 	};
-
-	int count = 0;
-	const char *field;
-
-	assert(f->num_fields == 3);
-
-	fieldlist_iter_begin(f);
-
-	while ((field = fieldlist_iter_next(f))) {
-		if (count >= 3)
-			return CFBSTATS_ERROR;
-
-		if (strcmp(field_names[count], field) != 0)
-			return CFBSTATS_ERROR;
-
-		count++;
-	}
-
-	return CFBSTATS_OK;
-}
-
-static int parse_team_csv(struct fieldlist *f)
-{
+	static const int NUM_TEAM_FIELDS = NUM_FIELDS(fields);
 	static bool processed_header = false;
+
 	const char *str;
 	size_t len;
 	int id;
@@ -232,11 +217,14 @@ static int parse_team_csv(struct fieldlist *f)
 	char name[128];
 	struct conference *c;
 
-	assert(f->num_fields == 3);
+	if (f->num_fields != NUM_TEAM_FIELDS) {
+		cfbstats_errno = CFBSTATS_EINVALIDFILE;
+		return CFBSTATS_ERROR;
+	}
 
 	if (!processed_header) {
 		processed_header = true;
-		return check_team_csv_header(f);
+		return check_csv_header(f, fields, NUM_TEAM_FIELDS);
 	}
 
 	fieldlist_iter_begin(f);

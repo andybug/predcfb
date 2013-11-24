@@ -7,7 +7,8 @@
 enum cfbstats_err {
 	CFBSTATS_ENONE,
 	CFBSTATS_EZIPFILE,
-	CFBSTATS_ENOMEM
+	CFBSTATS_ENOMEM,
+	CFBSTATS_EINVALIDFILE
 };
 
 extern enum cfbstats_err cfbstats_errno;
