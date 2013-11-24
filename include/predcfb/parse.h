@@ -15,6 +15,7 @@ enum parse_err {
 extern enum parse_err parse_errno;
 
 extern int parse_conference_csv(struct fieldlist *f);
+extern int parse_team_csv(struct fieldlist *f);
 extern int parse_zipfile(const char *archive);
 
 #endif

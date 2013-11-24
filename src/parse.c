@@ -13,6 +13,13 @@
 #include <predcfb/zipfile.h>
 #include <predcfb/csvparse.h>
 
+#define CFBSTATS_MAP_SIZE 4096
+
+struct cfbstats_map_entry {
+	int id;
+	objectid oid;
+};
+
 enum parse_file_type {
 	PARSE_FILE_NONE,
 	PARSE_FILE_CSV
@@ -26,14 +33,24 @@ struct parse_handler {
 
 const struct parse_handler cfbstats_handlers[] = {
 	{ "conference.csv", PARSE_FILE_CSV, parse_conference_csv },
+	{ "team.csv", PARSE_FILE_CSV, parse_team_csv },
 	{ NULL, PARSE_FILE_NONE, NULL }
 };
+
+static struct cfbstats_map_entry cfbstats_map[CFBSTATS_MAP_SIZE];
 
 /* subtract 1 from total to account for ending null struct */
 const int num_cfbstats_handlers = (sizeof(cfbstats_handlers) /
                                    sizeof(struct parse_handler)) - 1;
 
 enum parse_err parse_errno = PARSE_ENONE;
+
+/* initialization functions */
+
+static void parse_init(void)
+{
+	memset(cfbstats_map, 0, sizeof(cfbstats_map));
+}
 
 /* conversion functions */
 
@@ -93,6 +110,55 @@ static int parse_int(const char *str, int *out)
 	*out = (int) li;
 
 	return PARSE_OK;
+}
+
+/* cfbstats id to objectid map */
+
+static int cfbstats_map_insert(int id, const objectid *oid)
+{
+	static const int mask = CFBSTATS_MAP_SIZE - 1;
+	struct cfbstats_map_entry *entry;
+	int i;
+	int count = 0;
+
+	i = id & mask;
+
+	while (count < CFBSTATS_MAP_SIZE) {
+		entry = &cfbstats_map[i];
+		if (entry->id == 0) {
+			entry->id = id;
+			entry->oid = *oid;
+		}
+
+		i = (i + 1) & mask;
+		count++;
+	}
+
+	if (count == CFBSTATS_MAP_SIZE)
+		return PARSE_ERROR;
+
+	return PARSE_OK;
+}
+
+static const objectid *cfbstats_map_lookup(int id)
+{
+	static const int mask = CFBSTATS_MAP_SIZE - 1;
+	struct cfbstats_map_entry *entry;
+	int i;
+	int count = 0;
+
+	i = id & mask;
+
+	while (count < CFBSTATS_MAP_SIZE) {
+		entry = &cfbstats_map[i];
+		if (entry->id == id)
+			return &entry->oid;
+
+		i = (i + 1) & mask;
+		count++;
+	}
+
+	return NULL;
 }
 
 /* parsing functions */
@@ -173,11 +239,44 @@ int parse_conference_csv(struct fieldlist *f)
 	if (objectdb_add_conference(conf, &oid) != OBJECTDB_OK)
 		return PARSE_ERROR;
 
-	char oid_str[OBJECTDB_MD_STR_SIZE];
-	objectid_string(&oid, oid_str);
+	/* add the conference to the id map */
+	if (cfbstats_map_insert(id, &oid) != PARSE_OK)
+		return PARSE_ERROR;
 
-	printf("%s  %s (%d)\n", oid_str, conf->name, (int)conf->div);
+	return PARSE_OK;
+}
 
+static int check_team_csv_header(struct fieldlist *f)
+{
+	static const char *field_names[] = {
+		"Team Code",
+		"Name",
+		"Conference Code"
+	};
+
+	int count = 0;
+	const char *field;
+
+	assert(f->num_fields == 3);
+
+	field = fieldlist_iter_begin(f);
+
+	while (field) {
+		if (count >= 3)
+			return PARSE_ERROR;
+
+		if (strcmp(field_names[count], field) != 0)
+			return PARSE_ERROR;
+
+		field = fieldlist_iter_next(f);
+		count++;
+	}
+
+	return PARSE_OK;
+}
+
+int parse_team_csv(struct fieldlist *f)
+{
 	return PARSE_OK;
 }
 
@@ -264,6 +363,8 @@ static int read_files_from_zipfile(zf_readctx *zf)
 int parse_zipfile(const char *path)
 {
 	zf_readctx *zf;
+
+	parse_init();
 
 	zf = zipfile_open_archive(path);
 	if (!zf || (zipfile_get_error(zf) != ZIPFILE_ENONE)) {
