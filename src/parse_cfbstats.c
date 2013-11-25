@@ -52,6 +52,9 @@ enum cfbstats_err cfbstats_errno = CFBSTATS_ENONE;
 
 static void cfbstats_init(void)
 {
+	/* make sure that the id map size is a power of 2 */
+	assert(!(CFBSTATS_ID_MAP_SIZE & (CFBSTATS_ID_MAP_SIZE - 1)));
+
 	memset(id_map, 0, sizeof(id_map));
 }
 
