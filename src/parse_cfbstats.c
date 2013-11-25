@@ -181,12 +181,12 @@ static int parse_conference_csv(struct fieldlist *f)
 		return CFBSTATS_ERROR;
 	strncpy(conf->name, str, CONFERENCE_NAME_MAX);
 
-	/* division */
+	/* subdivision */
 	str = fieldlist_iter_next(f);
 	if (strcmp("FBS", str) == 0)
-		conf->div = CONFERENCE_FBS;
+		conf->subdivision = CONFERENCE_FBS;
 	else if (strcmp("FCS", str) == 0)
-		conf->div = CONFERENCE_FCS;
+		conf->subdivision = CONFERENCE_FCS;
 	else
 		return CFBSTATS_ERROR;
 

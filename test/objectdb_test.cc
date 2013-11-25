@@ -61,7 +61,7 @@ namespace {
 		ASSERT_TRUE(c != NULL);
 
 		strcpy(c->name, "Southeastern");
-		c->div = CONFERENCE_FBS;
+		c->subdivision = CONFERENCE_FBS;
 
 		err = objectdb_add_conference(c, &id);
 		ASSERT_EQ(OBJECTDB_OK, err);
@@ -69,7 +69,7 @@ namespace {
 		c2 = objectdb_get_conference(&id);
 		ASSERT_TRUE(c2 != NULL);
 		ASSERT_STREQ(c->name, c2->name);
-		ASSERT_EQ(c->div, c2->div);
+		ASSERT_EQ(c->subdivision, c2->subdivision);
 	}
 
 	TEST_F(ObjectDBTest, LookupBogusConference) {
@@ -92,7 +92,7 @@ namespace {
 		ASSERT_TRUE(c != NULL);
 
 		strcpy(c->name, "Southeastern");
-		c->div = CONFERENCE_FBS;
+		c->subdivision = CONFERENCE_FBS;
 
 		err = objectdb_add_conference(c, &id);
 		ASSERT_EQ(OBJECTDB_OK, err);

@@ -11,7 +11,7 @@ enum conference_division {
 
 struct conference {
 	char name[CONFERENCE_NAME_MAX];
-	enum conference_division div;
+	enum conference_division subdivision;
 };
 
 #endif

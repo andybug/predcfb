@@ -99,9 +99,9 @@ static void objectid_from_conference(const struct conference *c, objectid *id)
 	len = strlen(c->name);
 	sha1_update(&ctx, (unsigned char*) c->name, len);
 
-	/* hash div */
-	len = sizeof(c->div);
-	sha1_update(&ctx, (unsigned char*) &c->div, len);
+	/* hash subdivision */
+	len = sizeof(c->subdivision);
+	sha1_update(&ctx, (unsigned char*) &c->subdivision, len);
 
 	sha1_finish(&ctx, id->md);
 }
