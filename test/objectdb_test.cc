@@ -4,6 +4,7 @@
 #include <gtest/gtest.h>
 
 extern "C" {
+#include <predcfb/predcfb.h>
 #include <predcfb/objectdb.h>
 }
 

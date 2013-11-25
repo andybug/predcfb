@@ -7,10 +7,11 @@
 #include <assert.h>
 
 #include <polarssl/sha1.h>
+#include <predcfb/predcfb.h>
 #include <predcfb/objectdb.h>
 
 #define OBJECTDB_MAX_OBJECTS   4096
-#define OBJECTDB_MAP_SIZE     (1<<11)
+#define OBJECTDB_MAP_SIZE      2048
 
 enum object_type {
 	OBJECTDB_CONF,
@@ -21,6 +22,7 @@ enum object_type {
 
 union object_data {
 	struct conference *conf;
+	struct team *team;
 };
 
 struct object {
@@ -35,6 +37,9 @@ static int num_objects = 0;
 
 static struct conference conferences[CONFERENCE_NUM_MAX];
 static int num_conferences = 0;
+
+static struct team teams[TEAM_NUM_MAX];
+static int num_teams = 0;
 
 static struct object *object_map[OBJECTDB_MAP_SIZE];
 
@@ -104,6 +109,15 @@ static void objectid_from_conference(const struct conference *c, objectid *id)
 	sha1_update(&ctx, (unsigned char*) &c->subdivision, len);
 
 	sha1_finish(&ctx, id->md);
+}
+
+static void objectid_from_team(const struct team *t, objectid *id)
+{
+	size_t len;
+
+	/* just hash name */
+	len = strlen(t->name);
+	sha1((unsigned char*) t->name, len, id->md);
 }
 
 /* object table functions */
@@ -216,6 +230,21 @@ struct conference *objectdb_create_conference(void)
 	return conf;
 }
 
+struct team *objectdb_create_team(void)
+{
+	struct team *team;
+
+	if (num_teams >= TEAM_NUM_MAX) {
+		objectdb_errno = OBJECTDB_EMAXTEAMS;
+		return NULL;
+	}
+
+	team = &teams[num_teams];
+	num_teams++;
+
+	return teams;
+}
+
 /* objectdb add functions */
 
 int objectdb_add_conference(struct conference *c, objectid *id)
@@ -230,6 +259,25 @@ int objectdb_add_conference(struct conference *c, objectid *id)
 	obj->id = *id;
 	obj->type = OBJECTDB_CONF;
 	obj->data.conf = c;
+
+	if (map_insert(obj) != OBJECTDB_OK)
+		return OBJECTDB_ERROR;
+
+	return OBJECTDB_OK;
+}
+
+int objectdb_add_team(struct team *t, objectid *id)
+{
+	struct object *obj;
+
+	if ((obj = table_new_object()) == NULL)
+		return OBJECTDB_ERROR;
+
+	objectid_from_team(t, id);
+
+	obj->id = *id;
+	obj->type = OBJECTDB_TEAM;
+	obj->data.team = t;
 
 	if (map_insert(obj) != OBJECTDB_OK)
 		return OBJECTDB_ERROR;

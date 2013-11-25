@@ -219,8 +219,8 @@ static int parse_team_csv(struct fieldlist *f)
 	int conf_id;
 	objectid oid;
 	const objectid *conf_oid;
-	char name[128];
-	struct conference *c;
+	struct conference *conf;
+	struct team *team;
 
 	if (f->num_fields != NUM_TEAM_FIELDS) {
 		cfbstats_errno = CFBSTATS_EINVALIDFILE;
@@ -232,6 +232,11 @@ static int parse_team_csv(struct fieldlist *f)
 		return check_csv_header(f, fields, NUM_TEAM_FIELDS);
 	}
 
+	if ((team = objectdb_create_team()) == NULL) {
+		cfbstats_errno = CFBSTATS_ETOOMANY;
+		return CFBSTATS_ERROR;
+	}
+
 	fieldlist_iter_begin(f);
 
 	/* id field */
@@ -241,21 +246,34 @@ static int parse_team_csv(struct fieldlist *f)
 	/* team name */
 	str = fieldlist_iter_next(f);
 	len = strlen(str);
-	if (len >= 128)
+	if (len >= TEAM_NAME_MAX)
 		return CFBSTATS_ERROR;
-	strncpy(name, str, 128);
+	strncpy(team->name, str, TEAM_NAME_MAX);
 
 	/* conf id */
 	if (fieldlist_iter_next_int(f, &conf_id) != FIELDLIST_OK)
 		return CFBSTATS_ERROR;
 
-	conf_oid = id_map_lookup(conf_id);
-	assert(conf_oid != NULL);
+	/* get the conf oid from the id */
+	if ((conf_oid = id_map_lookup(conf_id)) == NULL) {
+		cfbstats_errno = CFBSTATS_EIDLOOKUP;
+		return CFBSTATS_ERROR;
+	}
+	team->conf_oid = *conf_oid;
 
-	c = objectdb_get_conference(conf_oid);
-	assert(c != NULL);
+	/* set the conf pointer from the conf_oid */
+	if ((conf = objectdb_get_conference(conf_oid)) == NULL) {
+		cfbstats_errno = CFBSTATS_EOIDLOOKUP;
+		return CFBSTATS_ERROR;
+	}
+	team->conf = conf;
 
-	printf("%s: %s\n", name, c->name);
+	/* add the team to the object db */
+	if (objectdb_add_team(team, &oid) != OBJECTDB_OK)
+		return CFBSTATS_ERROR;
+
+	objectid_print(&oid);
+	printf("  %s: %s\n", team->name, team->conf->name);
 
 	return CFBSTATS_OK;
 }
