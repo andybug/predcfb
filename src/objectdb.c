@@ -33,6 +33,9 @@ struct object {
 static struct object object_table[OBJECTDB_MAX_OBJECTS];
 static int num_objects = 0;
 
+static struct conference conferences[CONFERENCE_NUM_MAX];
+static int num_conferences = 0;
+
 static struct object *object_map[OBJECTDB_MAP_SIZE];
 
 enum objectdb_err objectdb_errno = OBJECTDB_ENONE;
@@ -196,7 +199,24 @@ static int map_insert(struct object *obj)
 	return OBJECTDB_OK;
 }
 
-/* objectdb add and get functions */
+/* objectdb create functions */
+
+struct conference *objectdb_create_conference(void)
+{
+	struct conference *conf;
+
+	if (num_conferences >= CONFERENCE_NUM_MAX) {
+		objectdb_errno = OBJECTDB_EMAXCONFS;
+		return NULL;
+	}
+
+	conf = &conferences[num_conferences];
+	num_conferences++;
+
+	return conf;
+}
+
+/* objectdb add functions */
 
 int objectdb_add_conference(struct conference *c, objectid *id)
 {
@@ -216,6 +236,8 @@ int objectdb_add_conference(struct conference *c, objectid *id)
 
 	return OBJECTDB_OK;
 }
+
+/* objectdb get functions */
 
 struct conference *objectdb_get_conference(const objectid *id)
 {
@@ -238,6 +260,9 @@ void objectdb_clear(void)
 {
 	memset(object_table, 0, sizeof(object_table));
 	num_objects = 0;
+
+	memset(conferences, 0, sizeof(conferences));
+	num_conferences = 0;
 
 	memset(object_map, 0, sizeof(object_map));
 }

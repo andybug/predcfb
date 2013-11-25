@@ -6,7 +6,6 @@ ADD_LIBRARY(
 	libpredcfb
 	OBJECT
 	# --- sources ---
-	conference.c
 	csvparse.c
 	fieldlist.c
 	objectdb.c

@@ -20,6 +20,7 @@ namespace {
 	void ObjectDBTest::SetUp()
 	{
 		objectdb_clear();
+		objectdb_errno = OBJECTDB_ENONE;
 	}
 
 	void ObjectDBTest::TearDown()
@@ -28,22 +29,47 @@ namespace {
 
 	/*************************************************/
 
+	TEST_F(ObjectDBTest, CreateConference) {
+		struct conference *c;
+
+		c = objectdb_create_conference();
+		ASSERT_TRUE(c != NULL);
+		ASSERT_EQ(OBJECTDB_ENONE, objectdb_errno);
+	}
+
+	TEST_F(ObjectDBTest, CreateTooManyConferences) {
+		struct conference *c;
+		int i;
+
+		for (i = 0; i < CONFERENCE_NUM_MAX; i++) {
+			c = objectdb_create_conference();
+			ASSERT_TRUE(c != NULL);
+			ASSERT_EQ(OBJECTDB_ENONE, objectdb_errno);
+		}
+
+		c = objectdb_create_conference();
+		ASSERT_TRUE(c == NULL);
+		ASSERT_EQ(OBJECTDB_EMAXCONFS, objectdb_errno);
+	}
+
 	TEST_F(ObjectDBTest, AddConferenceAndLookup) {
-		struct conference conf;
-		struct conference *pconf;
+		struct conference *c, *c2;
 		objectid id;
 		int err;
 
-		strcpy(conf.name, "Southeastern");
-		conf.div = CONFERENCE_FBS;
+		c = objectdb_create_conference();
+		ASSERT_TRUE(c != NULL);
 
-		err = objectdb_add_conference(&conf, &id);
-		ASSERT_EQ(err, OBJECTDB_OK);
+		strcpy(c->name, "Southeastern");
+		c->div = CONFERENCE_FBS;
 
-		pconf = objectdb_get_conference(&id);
-		ASSERT_NE(pconf, (struct conference*)NULL);
-		ASSERT_STREQ(pconf->name, conf.name);
-		ASSERT_EQ(pconf->div, conf.div);
+		err = objectdb_add_conference(c, &id);
+		ASSERT_EQ(OBJECTDB_OK, err);
+
+		c2 = objectdb_get_conference(&id);
+		ASSERT_TRUE(c2 != NULL);
+		ASSERT_STREQ(c->name, c2->name);
+		ASSERT_EQ(c->div, c2->div);
 	}
 
 	TEST_F(ObjectDBTest, LookupBogusConference) {
@@ -53,23 +79,26 @@ namespace {
 		memset(id.md, 0xaf, sizeof(id.md));
 
 		conf = objectdb_get_conference(&id);
-		ASSERT_EQ(conf, (struct conference*)NULL);
-		ASSERT_EQ(objectdb_errno, OBJECTDB_ENOTFOUND);
+		ASSERT_TRUE(conf == NULL);
+		ASSERT_EQ(OBJECTDB_ENOTFOUND, objectdb_errno);
 	}
 
 	TEST_F(ObjectDBTest, InsertConferenceTwice) {
-		struct conference conf;
+		struct conference *c;
 		objectid id;
 		int err;
 
-		strcpy(conf.name, "Southeastern");
-		conf.div = CONFERENCE_FBS;
+		c = objectdb_create_conference();
+		ASSERT_TRUE(c != NULL);
 
-		err = objectdb_add_conference(&conf, &id);
-		ASSERT_EQ(err, OBJECTDB_OK);
+		strcpy(c->name, "Southeastern");
+		c->div = CONFERENCE_FBS;
 
-		err = objectdb_add_conference(&conf, &id);
-		ASSERT_EQ(err, OBJECTDB_ERROR);
-		ASSERT_EQ(objectdb_errno, OBJECTDB_EDUPLICATE);
+		err = objectdb_add_conference(c, &id);
+		ASSERT_EQ(OBJECTDB_OK, err);
+
+		err = objectdb_add_conference(c, &id);
+		ASSERT_EQ(OBJECTDB_ERROR, err);
+		ASSERT_EQ(OBJECTDB_EDUPLICATE, objectdb_errno);
 	}
 }

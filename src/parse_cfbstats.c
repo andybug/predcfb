@@ -7,7 +7,7 @@
 #include <stdbool.h>
 
 #include <predcfb/cfbstats.h>
-#include <predcfb/conference.h>
+#include <predcfb/predcfb.h>
 #include <predcfb/objectdb.h>
 #include <predcfb/zipfile.h>
 #include <predcfb/csvparse.h>
@@ -157,9 +157,11 @@ static int parse_conference_csv(struct fieldlist *f)
 		return check_csv_header(f, fields, NUM_CONFERENCE_FIELDS);
 	}
 
-	conf = conference_create();
+	conf = objectdb_create_conference();
 	if (!conf) {
-		/* too many conferences! */
+		/* too many conferences!
+		 * TODO: print error string
+		 */
 		return CFBSTATS_ERROR;
 	}
 
