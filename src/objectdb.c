@@ -23,6 +23,7 @@ enum object_type {
 union object_data {
 	struct conference *conf;
 	struct team *team;
+	struct game *game;
 };
 
 struct object {
@@ -40,6 +41,9 @@ static int num_conferences = 0;
 
 static struct team teams[TEAM_NUM_MAX];
 static int num_teams = 0;
+
+static struct game games[GAME_NUM_MAX];
+static int num_games = 0;
 
 static struct object *object_map[OBJECTDB_MAP_SIZE];
 
@@ -243,6 +247,21 @@ struct team *objectdb_create_team(void)
 	num_teams++;
 
 	return teams;
+}
+
+struct game *objectdb_create_game(void)
+{
+	struct game *game;
+
+	if (num_teams >= GAME_NUM_MAX) {
+		objectdb_errno = OBJECTDB_EMAXGAMES;
+		return NULL;
+	}
+
+	game = &games[num_games];
+	num_games++;
+
+	return game;
 }
 
 /* objectdb add functions */

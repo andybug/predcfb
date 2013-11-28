@@ -33,10 +33,12 @@ struct file_handler {
 /* prototypes for the handlers */
 static int parse_conference_csv(struct fieldlist *);
 static int parse_team_csv(struct fieldlist *);
+static int parse_game_csv(struct fieldlist *);
 
 static const struct file_handler file_handlers[] = {
 	{ "conference.csv", CFBSTATS_FILE_CSV, parse_conference_csv },
 	{ "team.csv",       CFBSTATS_FILE_CSV, parse_team_csv },
+	{ "game.csv",       CFBSTATS_FILE_CSV, parse_game_csv },
 	{ NULL, CFBSTATS_FILE_NONE, NULL }
 };
 
@@ -274,6 +276,43 @@ static int parse_team_csv(struct fieldlist *f)
 
 	objectid_print(&oid);
 	printf("  %s: %s\n", team->name, team->conf->name);
+
+	return CFBSTATS_OK;
+}
+
+/* parse game.csv */
+
+static int parse_game_csv(struct fieldlist *f)
+{
+	static const char *fields[] = {
+		"Game Code",
+		"Date",
+		"Visit Team Code",
+		"Home Team Code",
+		"Stadium Code",
+		"Site"
+	};
+	static const int NUM_GAME_FIELDS = NUM_FIELDS(fields);
+	static bool processed_header = false;
+
+	struct game *game;
+
+	if (f->num_fields != NUM_GAME_FIELDS) {
+		cfbstats_errno = CFBSTATS_EINVALIDFILE;
+		return CFBSTATS_ERROR;
+	}
+
+	if (!processed_header) {
+		processed_header = true;
+		return check_csv_header(f, fields, NUM_GAME_FIELDS);
+	}
+
+	if ((game = objectdb_create_game()) == NULL) {
+		cfbstats_errno = CFBSTATS_ETOOMANY;
+		return CFBSTATS_ERROR;
+	}
+
+	fieldlist_iter_begin(f);
 
 	return CFBSTATS_OK;
 }

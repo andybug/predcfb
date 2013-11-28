@@ -1,6 +1,9 @@
 #ifndef PREDCFB_H
 #define PREDCFB_H
 
+#include <stdbool.h>
+#include <time.h>
+
 #include <predcfb/objectdb.h>
 
 #define CONFERENCE_NAME_MAX 64
@@ -24,6 +27,17 @@ struct team {
 
 	struct objectid conf_oid;
 	struct conference *conf;
+};
+
+#define GAME_NUM_MAX 2048
+
+struct game {
+	struct objectid home_oid;
+	struct team *home;
+	struct objectid away_oid;
+	struct team *team;
+	bool neutral;
+	time_t date;
 };
 
 #endif
