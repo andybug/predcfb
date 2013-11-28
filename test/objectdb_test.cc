@@ -1,4 +1,5 @@
 
+#include <time.h>
 #include <string>
 
 #include <gtest/gtest.h>
@@ -169,6 +170,85 @@ namespace {
 		ASSERT_EQ(OBJECTDB_OK, err);
 
 		err = objectdb_add_team(team, &id);
+		ASSERT_EQ(OBJECTDB_ERROR, err);
+		ASSERT_EQ(OBJECTDB_EDUPLICATE, objectdb_errno);
+	}
+
+	TEST_F(ObjectDBTest, CreateGame) {
+		struct game *game;
+
+		game = objectdb_create_game();
+		ASSERT_TRUE(game != NULL);
+		ASSERT_EQ(OBJECTDB_ENONE, objectdb_errno);
+	}
+
+	TEST_F(ObjectDBTest, CreateTooManyGames) {
+		struct game *game;
+		int i;
+
+		for (i = 0; i < GAME_NUM_MAX; i++) {
+			game = objectdb_create_game();
+			ASSERT_TRUE(game != NULL);
+			ASSERT_EQ(OBJECTDB_ENONE, objectdb_errno);
+		}
+
+		game = objectdb_create_game();
+		ASSERT_TRUE(game == NULL);
+		ASSERT_EQ(OBJECTDB_EMAXGAMES, objectdb_errno);
+	}
+
+	TEST_F(ObjectDBTest, AddGameAndLookup) {
+		struct game *game1, *game2;
+		objectid id;
+		int err;
+		bool equal;
+
+		game1 = objectdb_create_game();
+		ASSERT_TRUE(game1 != NULL);
+
+		memset(game1->home_oid.md, 1, OBJECTDB_MD_SIZE);
+		memset(game1->away_oid.md, 2, OBJECTDB_MD_SIZE);
+		game1->date = time(NULL);
+
+		err = objectdb_add_game(game1, &id);
+		ASSERT_EQ(OBJECTDB_OK, err);
+
+		game2 = objectdb_get_game(&id);
+		ASSERT_TRUE(game2 != NULL);
+
+		equal = objectid_compare(&game1->home_oid, &game2->home_oid);
+		ASSERT_TRUE(equal == true);
+		equal = objectid_compare(&game1->away_oid, &game2->away_oid);
+		ASSERT_TRUE(equal == true);
+	}
+
+	TEST_F(ObjectDBTest, LookupBogusGame) {
+		objectid id;
+		struct game *game;
+
+		memset(id.md, 0xaf, sizeof(id.md));
+
+		game = objectdb_get_game(&id);
+		ASSERT_TRUE(game == NULL);
+		ASSERT_EQ(OBJECTDB_ENOTFOUND, objectdb_errno);
+	}
+
+	TEST_F(ObjectDBTest, InsertGameTwice) {
+		struct game *game;
+		objectid id;
+		int err;
+
+		game = objectdb_create_game();
+		ASSERT_TRUE(game != NULL);
+
+		memset(game->home_oid.md, 1, OBJECTDB_MD_SIZE);
+		memset(game->away_oid.md, 2, OBJECTDB_MD_SIZE);
+		game->date = time(NULL);
+
+		err = objectdb_add_game(game, &id);
+		ASSERT_EQ(OBJECTDB_OK, err);
+
+		err = objectdb_add_game(game, &id);
 		ASSERT_EQ(OBJECTDB_ERROR, err);
 		ASSERT_EQ(OBJECTDB_EDUPLICATE, objectdb_errno);
 	}

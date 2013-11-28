@@ -1,6 +1,8 @@
 #ifndef OBJECTDB_H
 #define OBJECTDB_H
 
+#include <stdbool.h>
+
 #define OBJECTDB_OK       0
 #define OBJECTDB_ERROR  (-1)
 
@@ -27,6 +29,7 @@ struct team;
 
 extern enum objectdb_err objectdb_errno;
 
+extern bool objectid_compare(const objectid *a, const objectid *b);
 extern void objectid_print(const objectid *id);
 extern void objectid_string(const objectid *id,
                             char buf[OBJECTDB_MD_STR_SIZE]);

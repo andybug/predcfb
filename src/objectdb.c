@@ -83,16 +83,13 @@ void objectid_string(const objectid *id, char buf[OBJECTDB_MD_STR_SIZE])
 
 /* objectid compare functions */
 
-static bool objectid_compare(const objectid *a, const objectid *b)
+bool objectid_compare(const objectid *a, const objectid *b)
 {
-	int i;
+	int diff;
 
-	for (i = 0; i < OBJECTDB_MD_SIZE; i++) {
-		if (a->md[i] != b->md[i])
-			return false;
-	}
+	diff = memcmp(a->md, b->md, OBJECTDB_MD_SIZE);
 
-	return true;
+	return (diff == 0);
 }
 
 /* objectid hashing functions */
@@ -269,7 +266,7 @@ struct game *objectdb_create_game(void)
 {
 	struct game *game;
 
-	if (num_teams >= GAME_NUM_MAX) {
+	if (num_games >= GAME_NUM_MAX) {
 		objectdb_errno = OBJECTDB_EMAXGAMES;
 		return NULL;
 	}
@@ -371,6 +368,21 @@ struct team *objectdb_get_team(const objectid *id)
 	return obj->data.team;
 }
 
+struct game *objectdb_get_game(const objectid *id)
+{
+	struct object *obj;
+
+	if ((obj = map_lookup(id)) == NULL)
+		return NULL;
+
+	if (obj->type != OBJECTDB_GAME) {
+		objectdb_errno = OBJECTDB_EWRONGTYPE;
+		return NULL;
+	}
+
+	return obj->data.game;
+}
+
 /* objectdb misc functions */
 
 void objectdb_clear(void)
@@ -383,6 +395,9 @@ void objectdb_clear(void)
 
 	memset(teams, 0, sizeof(teams));
 	num_teams = 0;
+
+	memset(games, 0, sizeof(games));
+	num_games = 0;
 
 	memset(object_map, 0, sizeof(object_map));
 }
