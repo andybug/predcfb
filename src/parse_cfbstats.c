@@ -5,6 +5,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdbool.h>
+#include <time.h>
 
 #include <predcfb/cfbstats.h>
 #include <predcfb/predcfb.h>
@@ -296,6 +297,11 @@ static int parse_game_csv(struct fieldlist *f)
 	static bool processed_header = false;
 
 	struct game *game;
+	struct tm tm;
+	const char *str, *lastchar;
+	int id;
+	const objectid *oid;
+	objectid game_oid;
 
 	if (f->num_fields != NUM_GAME_FIELDS) {
 		cfbstats_errno = CFBSTATS_EINVALIDFILE;
@@ -313,6 +319,62 @@ static int parse_game_csv(struct fieldlist *f)
 	}
 
 	fieldlist_iter_begin(f);
+
+	/* ignore the game code */
+	str = fieldlist_iter_next(f);
+
+	/* date in the format 08/29/2013 */
+	str = fieldlist_iter_next(f);
+	lastchar = strptime(str, "%D", &tm);
+	if (!lastchar || *lastchar != '\0') {
+		cfbstats_errno = CFBSTATS_EINVALIDFILE;
+		return CFBSTATS_ERROR;
+	}
+	game->date = mktime(&tm);
+
+	/* visiting team */
+	if (fieldlist_iter_next_int(f, &id) != FIELDLIST_OK) {
+		cfbstats_errno = CFBSTATS_EINVALIDFILE;
+		return CFBSTATS_ERROR;
+	}
+
+	/* get the away team's oid from the id */
+	if ((oid = id_map_lookup(id)) == NULL) {
+		cfbstats_errno = CFBSTATS_EIDLOOKUP;
+		return CFBSTATS_ERROR;
+	}
+	game->away_oid = *oid;
+
+	/* home team */
+	if (fieldlist_iter_next_int(f, &id) != FIELDLIST_OK) {
+		cfbstats_errno = CFBSTATS_EINVALIDFILE;
+		return CFBSTATS_ERROR;
+	}
+
+	/* get the home team's oid from the id */
+	if ((oid = id_map_lookup(id)) == NULL) {
+		cfbstats_errno = CFBSTATS_EIDLOOKUP;
+		return CFBSTATS_ERROR;
+	}
+	game->home_oid = *oid;
+
+	/* ignore stadium code */
+	str = fieldlist_iter_next(f);
+
+	/* site */
+	str = fieldlist_iter_next(f);
+	if (strcmp(str, "TEAM") == 0) {
+		game->neutral = false;
+	} else if (strcmp(str, "NEUTRAL") == 0) {
+		game->neutral = true;
+	} else {
+		cfbstats_errno = CFBSTATS_EINVALIDFILE;
+		return CFBSTATS_ERROR;
+	}
+
+	/* finally, add the game to the db */
+	if (objectdb_add_game(game, &game_oid) != OBJECTDB_OK)
+		return CFBSTATS_ERROR;
 
 	return CFBSTATS_OK;
 }

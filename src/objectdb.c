@@ -124,6 +124,22 @@ static void objectid_from_team(const struct team *t, objectid *id)
 	sha1((unsigned char*) t->name, len, id->md);
 }
 
+static void objectid_from_game(const struct game *g, objectid *id)
+{
+	sha1_context ctx;
+
+	sha1_starts(&ctx);
+
+	/* hash home team oid */
+	sha1_update(&ctx, g->home_oid.md, OBJECTDB_MD_SIZE);
+	/* hash away team oid */
+	sha1_update(&ctx, g->away_oid.md, OBJECTDB_MD_SIZE);
+	/* hash time_t */
+	sha1_update(&ctx, (unsigned char*) &g->date, sizeof(time_t));
+
+	sha1_finish(&ctx, id->md);
+}
+
 /* object table functions */
 
 static struct object *table_new_object(void)
@@ -297,6 +313,25 @@ int objectdb_add_team(struct team *t, objectid *id)
 	obj->id = *id;
 	obj->type = OBJECTDB_TEAM;
 	obj->data.team = t;
+
+	if (map_insert(obj) != OBJECTDB_OK)
+		return OBJECTDB_ERROR;
+
+	return OBJECTDB_OK;
+}
+
+int objectdb_add_game(struct game *g, objectid *id)
+{
+	struct object *obj;
+
+	if ((obj = table_new_object()) == NULL)
+		return OBJECTDB_ERROR;
+
+	objectid_from_game(g, id);
+
+	obj->id = *id;
+	obj->type = OBJECTDB_GAME;
+	obj->data.game = g;
 
 	if (map_insert(obj) != OBJECTDB_OK)
 		return OBJECTDB_ERROR;

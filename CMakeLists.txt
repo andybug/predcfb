@@ -27,7 +27,7 @@ CONFIGURE_FILE(
 
 # --- c compiler flags ---
 
-SET(CMAKE_C_FLAGS "-Wall -Wextra -std=c99 -pedantic -D_POSIX_C_SOURCE=200809L")
+SET(CMAKE_C_FLAGS "-Wall -Wextra -std=c99 -pedantic -D_XOPEN_SOURCE=700")
 SET(CMAKE_C_FLAGS_DEBUG "-g -O0")
 SET(CMAKE_C_FLAGS_RELEASE "-O3")
 
