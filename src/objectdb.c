@@ -146,7 +146,7 @@ static struct object **map_get_bin(const objectid *id)
 	int32_t bin;
 
 	/* assert that map size is a power of two */
-	assert(OBJECTDB_MAP_SIZE == (OBJECTDB_MAP_SIZE & (~OBJECTDB_MAP_SIZE) + 1));
+	assert(!(OBJECTDB_MAP_SIZE & (OBJECTDB_MAP_SIZE - 1)));
 
 	bin = *bits & mask;
 
@@ -302,6 +302,21 @@ struct conference *objectdb_get_conference(const objectid *id)
 	return obj->data.conf;
 }
 
+struct team *objectdb_get_team(const objectid *id)
+{
+	struct object *obj;
+
+	if ((obj = map_lookup(id)) == NULL)
+		return NULL;
+
+	if (obj->type != OBJECTDB_TEAM) {
+		objectdb_errno = OBJECTDB_EWRONGTYPE;
+		return NULL;
+	}
+
+	return obj->data.team;
+}
+
 /* objectdb misc functions */
 
 void objectdb_clear(void)
@@ -311,6 +326,9 @@ void objectdb_clear(void)
 
 	memset(conferences, 0, sizeof(conferences));
 	num_conferences = 0;
+
+	memset(teams, 0, sizeof(teams));
+	num_teams = 0;
 
 	memset(object_map, 0, sizeof(object_map));
 }

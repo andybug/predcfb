@@ -115,7 +115,7 @@ namespace {
 		struct team *team;
 		int i;
 
-		for (i = 0; i < CONFERENCE_NUM_MAX; i++) {
+		for (i = 0; i < TEAM_NUM_MAX; i++) {
 			team = objectdb_create_team();
 			ASSERT_TRUE(team != NULL);
 			ASSERT_EQ(OBJECTDB_ENONE, objectdb_errno);
