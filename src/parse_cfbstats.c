@@ -37,11 +37,13 @@ struct file_handler {
 static int parse_conference_csv(struct fieldlist *);
 static int parse_team_csv(struct fieldlist *);
 static int parse_game_csv(struct fieldlist *);
+static int parse_stats_csv(struct fieldlist *);
 
 static const struct file_handler file_handlers[] = {
 	{ "conference.csv", CFBSTATS_FILE_CSV, parse_conference_csv },
-	{ "team.csv",       CFBSTATS_FILE_CSV, parse_team_csv },
-	{ "game.csv",       CFBSTATS_FILE_CSV, parse_game_csv },
+	{ "team.csv", CFBSTATS_FILE_CSV, parse_team_csv },
+	{ "game.csv", CFBSTATS_FILE_CSV, parse_game_csv },
+	{ "team-game-statistics.csv", CFBSTATS_FILE_CSV, parse_stats_csv },
 	{ NULL, CFBSTATS_FILE_NONE, NULL }
 };
 
@@ -383,6 +385,96 @@ static int parse_game_csv(struct fieldlist *f)
 	/* finally, add the game to the db */
 	if (objectdb_add_game(game, &game_oid) != OBJECTDB_OK)
 		return CFBSTATS_ERROR;
+
+	return CFBSTATS_OK;
+}
+
+/* parse team-game-statistics.csv */
+
+int parse_stats_csv(struct fieldlist *f)
+{
+	static const char *fields[] = {
+		"Team Code",
+		"Game Code",
+		"Rush Att",
+		"Rush Yard",
+		"Rush TD",
+		"Pass Att",
+		"Pass Comp",
+		"Pass Yard",
+		"Pass TD",
+		"Pass Int",
+		"Pass Conv",
+		"Kickoff Ret",
+		"Kickoff Ret Yard",
+		"Kickoff Ret TD",
+		"Punt Ret",
+		"Punt Ret Yard",
+		"Punt Ret TD",
+		"Fum Ret",
+		"Fum Ret Yard",
+		"Fum Ret TD",
+		"Int Ret",
+		"Int Ret Yard",
+		"Int Ret TD",
+		"Misc Ret",
+		"Misc Ret Yard",
+		"Misc Ret TD",
+		"Field Goal Att",
+		"Field Goal Made",
+		"Off XP Kick Att",
+		"Off XP Kick Made",
+		"Off 2XP Att",
+		"Off 2XP Made",
+		"Def 2XP Att",
+		"Def 2XP Made",
+		"Safety",
+		"Points",
+		"Punt",
+		"Punt Yard",
+		"Kickoff",
+		"Kickoff Yard",
+		"Kickoff Touchback",
+		"Kickoff Out-Of-Bounds",
+		"Kickoff Onside",
+		"Fumble",
+		"Fumble Lost",
+		"Tackle Solo",
+		"Tackle Assist",
+		"Tackle For Loss",
+		"Tackle For Loss Yard",
+		"Sack",
+		"Sack Yard",
+		"QB Hurry",
+		"Fumble Forced",
+		"Pass Broken Up",
+		"Kick/Punt Blocked",
+		"1st Down Rush",
+		"1st Down Pass",
+		"1st Down Penalty",
+		"Time Of Possession",
+		"Penalty",
+		"Penalty Yard",
+		"Third Down Att",
+		"Third Down Conv",
+		"Fourth Down Att",
+		"Fourth Down Conv",
+		"Red Zone Att",
+		"Red Zone TD",
+		"Red Zone Field Goal"
+	};
+	static const int NUM_STAT_FIELDS = NUM_FIELDS(fields);
+	static bool processed_header = false;
+
+	if (f->num_fields != NUM_STAT_FIELDS) {
+		cfbstats_errno = CFBSTATS_EINVALIDFILE;
+		return CFBSTATS_ERROR;
+	}
+
+	if (!processed_header) {
+		processed_header = true;
+		return check_csv_header(f, fields, NUM_STAT_FIELDS);
+	}
 
 	return CFBSTATS_OK;
 }
