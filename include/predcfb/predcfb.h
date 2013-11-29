@@ -24,7 +24,6 @@ struct conference {
 
 struct team {
 	char name[TEAM_NAME_MAX];
-
 	struct objectid conf_oid;
 	struct conference *conf;
 };
@@ -35,7 +34,7 @@ struct game {
 	struct objectid home_oid;
 	struct team *home;
 	struct objectid away_oid;
-	struct team *team;
+	struct team *away;
 	bool neutral;
 	time_t date;
 };

@@ -222,7 +222,6 @@ static int parse_team_csv(struct fieldlist *f)
 	int conf_id;
 	objectid oid;
 	const objectid *conf_oid;
-	struct conference *conf;
 	struct team *team;
 
 	if (f->num_fields != NUM_TEAM_FIELDS) {
@@ -264,19 +263,9 @@ static int parse_team_csv(struct fieldlist *f)
 	}
 	team->conf_oid = *conf_oid;
 
-	/* set the conf pointer from the conf_oid */
-	if ((conf = objectdb_get_conference(conf_oid)) == NULL) {
-		cfbstats_errno = CFBSTATS_EOIDLOOKUP;
-		return CFBSTATS_ERROR;
-	}
-	team->conf = conf;
-
 	/* add the team to the object db */
 	if (objectdb_add_team(team, &oid) != OBJECTDB_OK)
 		return CFBSTATS_ERROR;
-
-	objectid_print(&oid);
-	printf("  %s: %s\n", team->name, team->conf->name);
 
 	return CFBSTATS_OK;
 }
@@ -483,6 +472,13 @@ int cfbstats_read_zipfile(const char *path)
 		handle_zipfile_error(zf, __func__);
 		return CFBSTATS_ERROR;
 	}
+
+	/*
+	 * finish up by setting all of the pointers in the data
+	 * from the object ids
+	 */
+	if (objectdb_link() != OBJECTDB_OK)
+		return CFBSTATS_ERROR;
 
 	return CFBSTATS_OK;
 }

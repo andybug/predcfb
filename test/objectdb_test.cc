@@ -252,4 +252,76 @@ namespace {
 		ASSERT_EQ(OBJECTDB_ERROR, err);
 		ASSERT_EQ(OBJECTDB_EDUPLICATE, objectdb_errno);
 	}
+
+	TEST_F(ObjectDBTest, LinkObjects) {
+		/*
+		 * add a conference, two teams in that conference,
+		 * and a game between those two teams. Ensure that
+		 * all of the pointers have been set after calling
+		 * objectdb_link
+		 */
+
+		struct conference *conf;
+		struct team *team1, *team2;
+		struct game *game;
+		objectid conf_oid;
+		objectid team1_oid, team2_oid;
+		objectid game_oid;
+		int err;
+
+		/* add conference */
+		conf = objectdb_create_conference();
+		ASSERT_TRUE(conf != NULL);
+
+		strcpy(conf->name, "Conference");
+		conf->subdivision = CONFERENCE_FBS;
+
+		err = objectdb_add_conference(conf, &conf_oid);
+		ASSERT_EQ(OBJECTDB_OK, err);
+
+
+		/* add first team */
+		team1 = objectdb_create_team();
+		ASSERT_TRUE(team1 != NULL);
+
+		strcpy(team1->name, "Team One");
+		team1->conf_oid = conf_oid;
+
+		err = objectdb_add_team(team1, &team1_oid);
+		ASSERT_EQ(OBJECTDB_OK, err);
+
+
+		/* add second team */
+		team2 = objectdb_create_team();
+		ASSERT_TRUE(team2 != NULL);
+
+		strcpy(team2->name, "Team Two");
+		team2->conf_oid = conf_oid;
+
+		err = objectdb_add_team(team2, &team2_oid);
+		ASSERT_EQ(OBJECTDB_OK, err);
+
+
+		/* add game */
+		game = objectdb_create_game();
+		ASSERT_TRUE(game != NULL);
+
+		game->home_oid = team1_oid;
+		game->away_oid = team2_oid;
+		memset(&game->date, 0, sizeof(time_t));
+
+		err = objectdb_add_game(game, &game_oid);
+		ASSERT_EQ(OBJECTDB_OK, err);
+
+
+		/* link objects */
+		err = objectdb_link();
+		ASSERT_EQ(OBJECTDB_OK, err);
+
+		/* check pointers */
+		ASSERT_EQ(conf, team1->conf);
+		ASSERT_EQ(conf, team2->conf);
+		ASSERT_EQ(team1, game->home);
+		ASSERT_EQ(team2, game->away);
+	}
 }

@@ -47,5 +47,6 @@ extern int objectdb_add_game(struct game *g, objectid *id);
 extern struct game *objectdb_get_game(const objectid *id);
 
 extern void objectdb_clear(void);
+extern int objectdb_link(void);
 
 #endif
