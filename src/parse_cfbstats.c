@@ -124,6 +124,43 @@ static const struct objectid *id_map_lookup(int id)
 	return NULL;
 }
 
+static int pack_game_code(const char *str)
+{
+	int id;
+	const char *team1, *team2, *date, *mmdd;
+	static const size_t team_str_len = 4;
+	static const size_t date_str_len = 8;
+	static const size_t mmdd_str_len = 4;
+	static const size_t buf_size = date_str_len + 1;
+	char buf[buf_size];
+	int code;
+
+	team1 = str;
+	team2 = (str + team_str_len);
+	date = (str + (team_str_len * 2));
+	mmdd = date + 4;
+
+	/* team1 shifted into bits 16-31 */
+	memcpy(buf, team1, team_str_len);
+	buf[team_str_len] = '\0';
+	code = atoi(buf);
+	id = (code << 16) & 0xffff0000;
+
+	/* team2 xor'd into bits 16-31 */
+	memcpy(buf, team2, team_str_len);
+	buf[team_str_len] = '\0';
+	code = atoi(buf);
+	id ^= (code << 16) & 0xffff0000;
+
+	/* month and day (mmdd) put into bits 0-15 */
+	memcpy(buf, mmdd, mmdd_str_len);
+	buf[mmdd_str_len] = '\0';
+	code = atoi(buf);
+	id |= code & 0x0000ffff;
+
+	return id;
+}
+
 /* csv header verification */
 
 static int check_csv_header(struct fieldlist *f, const char **fields, int num)
@@ -307,10 +344,11 @@ static int parse_game_csv(struct fieldlist *f)
 	struct game *game;
 	struct tm tm;
 	const char *str, *lastchar;
-	int id;
 	const struct objectid *oid;
 	struct objectid game_oid;
 	char date_buf[DATE_BUF_SIZE];
+	int game_id;
+	int team_id;
 
 	if (f->num_fields != NUM_GAME_FIELDS) {
 		cfbstats_errno = CFBSTATS_EINVALIDFILE;
@@ -329,8 +367,9 @@ static int parse_game_csv(struct fieldlist *f)
 
 	fieldlist_iter_begin(f);
 
-	/* ignore the game code */
+	/* game code */
 	str = fieldlist_iter_next(f);
+	game_id = pack_game_code(str);
 
 	/* date in the format 08/29/2013 */
 	str = fieldlist_iter_next(f);
@@ -343,26 +382,26 @@ static int parse_game_csv(struct fieldlist *f)
 	game->date = mktime(&tm);
 
 	/* visiting team */
-	if (fieldlist_iter_next_int(f, &id) != FIELDLIST_OK) {
+	if (fieldlist_iter_next_int(f, &team_id) != FIELDLIST_OK) {
 		cfbstats_errno = CFBSTATS_EINVALIDFILE;
 		return CFBSTATS_ERROR;
 	}
 
 	/* get the away team's oid from the id */
-	if ((oid = id_map_lookup(id)) == NULL) {
+	if ((oid = id_map_lookup(team_id)) == NULL) {
 		cfbstats_errno = CFBSTATS_EIDLOOKUP;
 		return CFBSTATS_ERROR;
 	}
 	game->away_oid = *oid;
 
 	/* home team */
-	if (fieldlist_iter_next_int(f, &id) != FIELDLIST_OK) {
+	if (fieldlist_iter_next_int(f, &team_id) != FIELDLIST_OK) {
 		cfbstats_errno = CFBSTATS_EINVALIDFILE;
 		return CFBSTATS_ERROR;
 	}
 
 	/* get the home team's oid from the id */
-	if ((oid = id_map_lookup(id)) == NULL) {
+	if ((oid = id_map_lookup(team_id)) == NULL) {
 		cfbstats_errno = CFBSTATS_EIDLOOKUP;
 		return CFBSTATS_ERROR;
 	}
@@ -382,8 +421,12 @@ static int parse_game_csv(struct fieldlist *f)
 		return CFBSTATS_ERROR;
 	}
 
-	/* finally, add the game to the db */
+	/* add the game to the db */
 	if (objectdb_add_game(game, &game_oid) != OBJECTDB_OK)
+		return CFBSTATS_ERROR;
+
+	/* finally, add the id to the id map */
+	if (id_map_insert(game_id, &game_oid) != CFBSTATS_OK)
 		return CFBSTATS_ERROR;
 
 	return CFBSTATS_OK;
