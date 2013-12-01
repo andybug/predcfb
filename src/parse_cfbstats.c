@@ -280,8 +280,8 @@ static int parse_team_csv(struct fieldlist *f)
 	if (objectdb_add_team(team, &oid) != OBJECTDB_OK)
 		return CFBSTATS_ERROR;
 
-	/* add team to id map */
-	if (id_map_insert(id, &oid) != OBJECTDB_OK)
+	/* add the team to the id map */
+	if (id_map_insert(id, &oid) != CFBSTATS_OK)
 		return CFBSTATS_ERROR;
 
 	return CFBSTATS_OK;
