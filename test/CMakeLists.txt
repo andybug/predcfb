@@ -16,6 +16,7 @@ ADD_EXECUTABLE(
 	# --- sources ---
 	fieldlist_test.cc
 	objectdb_test.cc
+	objectid_test.cc
 	zipfile_test.cc
 	# --- predcfb objects ---
 	$<TARGET_OBJECTS:libpredcfb>
