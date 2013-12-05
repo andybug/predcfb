@@ -9,6 +9,7 @@ ADD_LIBRARY(
 	csvparse.c
 	fieldlist.c
 	objectdb.c
+	objectid.c
 	parse_cfbstats.c
 	zipfile.c
 )

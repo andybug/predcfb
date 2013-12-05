@@ -8,21 +8,35 @@
 #define OBJECTID_MD_STR_SIZE  41
 
 struct objectid {
-	unsigned char md[OBJECTDB_MD_SIZE];
+	unsigned char md[OBJECTID_MD_SIZE];
 };
 
 typedef struct oid_context oid_ctx;
 
+/* return true if objectid a and b are equal */
 extern bool objectid_compare(const struct objectid *a,
                              const struct objectid *b);
-extern void objectid_print(const struct objectid *id);
-extern void objectid_string(const struct objectid *id,
-                            char buf[OBJECTDB_MD_STR_SIZE]);
 
-extern void objectid_create(const void *data, size_t len,
-                            struct objectid *out);
-extern oid_ctx *objectid_begin(void);
-extern void objectid_update(oid_ctx *ctx, const void *data, size_t len);
-extern void objectid_finish(oid_ctx *ctx, struct objectid *out);
+/* print objectid to stdout in hex format, no newline */
+extern void objectid_print(const struct objectid *id);
+
+/* write hex form of objectid to buf */
+extern void objectid_string(const struct objectid *id,
+                            char buf[OBJECTID_MD_STR_SIZE]);
+
+/* need this to avoid circular dependencies */
+struct conference;
+struct team;
+struct game;
+
+/* create an objectid from a conference */
+extern void objectid_from_conference(const struct conference *c,
+                                     struct objectid *id);
+
+/* create an objectid from a team */
+extern void objectid_from_team(const struct team *t, struct objectid *id);
+
+/* create an objectid from a game */
+extern void objectid_from_game(const struct game *g, struct objectid *id);
 
 #endif
