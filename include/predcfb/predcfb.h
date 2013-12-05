@@ -4,7 +4,7 @@
 #include <stdbool.h>
 #include <time.h>
 
-#include <predcfb/objectdb.h>
+#include <predcfb/objectid.h>
 
 #define CONFERENCE_NAME_MAX 64
 #define CONFERENCE_NUM_MAX  32
