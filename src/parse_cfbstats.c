@@ -17,7 +17,7 @@
 
 struct map_entry {
 	int id;
-	objectid oid;
+	struct objectid oid;
 };
 
 enum file_type {
@@ -63,7 +63,7 @@ static void cfbstats_init(void)
 
 /* cfbstats id to objectid map */
 
-static int id_map_insert(int id, const objectid *oid)
+static int id_map_insert(int id, const struct objectid *oid)
 {
 	static const int mask = CFBSTATS_ID_MAP_SIZE - 1;
 	struct map_entry *entry;
@@ -90,7 +90,7 @@ static int id_map_insert(int id, const objectid *oid)
 	return CFBSTATS_OK;
 }
 
-static const objectid *id_map_lookup(int id)
+static const struct objectid *id_map_lookup(int id)
 {
 	static const int mask = CFBSTATS_ID_MAP_SIZE - 1;
 	struct map_entry *entry;
@@ -151,7 +151,7 @@ static int parse_conference_csv(struct fieldlist *f)
 	const char *str;
 	size_t len;
 	int id;
-	objectid oid;
+	struct objectid oid;
 
 	if (f->num_fields != NUM_CONFERENCE_FIELDS) {
 		cfbstats_errno = CFBSTATS_EINVALIDFILE;
@@ -220,8 +220,8 @@ static int parse_team_csv(struct fieldlist *f)
 	size_t len;
 	int id;
 	int conf_id;
-	objectid oid;
-	const objectid *conf_oid;
+	struct objectid oid;
+	const struct objectid *conf_oid;
 	struct team *team;
 
 	if (f->num_fields != NUM_TEAM_FIELDS) {
@@ -289,8 +289,8 @@ static int parse_game_csv(struct fieldlist *f)
 	struct tm tm;
 	const char *str, *lastchar;
 	int id;
-	const objectid *oid;
-	objectid game_oid;
+	const struct objectid *oid;
+	struct objectid game_oid;
 
 	if (f->num_fields != NUM_GAME_FIELDS) {
 		cfbstats_errno = CFBSTATS_EINVALIDFILE;

@@ -3,7 +3,6 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdint.h>
-#include <stdbool.h>
 #include <assert.h>
 
 #include <predcfb/predcfb.h>
@@ -27,7 +26,7 @@ union object_data {
 };
 
 struct object {
-	objectid id;
+	struct objectid id;
 	enum object_type type;
 	union object_data data;
 	struct object *next;
@@ -68,7 +67,7 @@ static struct object *table_new_object(void)
 
 /* object map functions */
 
-static struct object **map_get_bin(const objectid *id)
+static struct object **map_get_bin(const struct objectid *id)
 {
 	static const int32_t mask = OBJECTDB_MAP_SIZE - 1;
 	int32_t *bits = (int32_t*) &id->md[16];
@@ -82,7 +81,7 @@ static struct object **map_get_bin(const objectid *id)
 	return (object_map + bin);
 }
 
-static struct object *map_lookup(const objectid *id)
+static struct object *map_lookup(const struct objectid *id)
 {
 	struct object **bin;
 	struct object *obj;
@@ -191,7 +190,7 @@ struct game *objectdb_create_game(void)
 
 /* objectdb add functions */
 
-int objectdb_add_conference(struct conference *c, objectid *id)
+int objectdb_add_conference(struct conference *c, struct objectid *id)
 {
 	struct object *obj;
 
@@ -210,7 +209,7 @@ int objectdb_add_conference(struct conference *c, objectid *id)
 	return OBJECTDB_OK;
 }
 
-int objectdb_add_team(struct team *t, objectid *id)
+int objectdb_add_team(struct team *t, struct objectid *id)
 {
 	struct object *obj;
 
@@ -229,7 +228,7 @@ int objectdb_add_team(struct team *t, objectid *id)
 	return OBJECTDB_OK;
 }
 
-int objectdb_add_game(struct game *g, objectid *id)
+int objectdb_add_game(struct game *g, struct objectid *id)
 {
 	struct object *obj;
 
@@ -250,7 +249,7 @@ int objectdb_add_game(struct game *g, objectid *id)
 
 /* objectdb get functions */
 
-struct conference *objectdb_get_conference(const objectid *id)
+struct conference *objectdb_get_conference(const struct objectid *id)
 {
 	struct object *obj;
 
@@ -265,7 +264,7 @@ struct conference *objectdb_get_conference(const objectid *id)
 	return obj->data.conf;
 }
 
-struct team *objectdb_get_team(const objectid *id)
+struct team *objectdb_get_team(const struct objectid *id)
 {
 	struct object *obj;
 
@@ -280,7 +279,7 @@ struct team *objectdb_get_team(const objectid *id)
 	return obj->data.team;
 }
 
-struct game *objectdb_get_game(const objectid *id)
+struct game *objectdb_get_game(const struct objectid *id)
 {
 	struct object *obj;
 

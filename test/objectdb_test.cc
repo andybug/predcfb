@@ -6,6 +6,7 @@
 
 extern "C" {
 #include <predcfb/predcfb.h>
+#include <predcfb/objectid.h>
 #include <predcfb/objectdb.h>
 }
 
@@ -56,7 +57,7 @@ namespace {
 
 	TEST_F(ObjectDBTest, AddConferenceAndLookup) {
 		struct conference *c, *c2;
-		objectid id;
+		struct objectid id;
 		int err;
 
 		c = objectdb_create_conference();
@@ -75,7 +76,7 @@ namespace {
 	}
 
 	TEST_F(ObjectDBTest, LookupBogusConference) {
-		objectid id;
+		struct objectid id;
 		struct conference *conf;
 
 		memset(id.md, 0xaf, sizeof(id.md));
@@ -87,7 +88,7 @@ namespace {
 
 	TEST_F(ObjectDBTest, InsertConferenceTwice) {
 		struct conference *c;
-		objectid id;
+		struct objectid id;
 		int err;
 
 		c = objectdb_create_conference();
@@ -129,7 +130,7 @@ namespace {
 
 	TEST_F(ObjectDBTest, AddTeamAndLookup) {
 		struct team *team1, *team2;
-		objectid id;
+		struct objectid id;
 		int err;
 
 		team1 = objectdb_create_team();
@@ -146,7 +147,7 @@ namespace {
 	}
 
 	TEST_F(ObjectDBTest, LookupBogusTeam) {
-		objectid id;
+		struct objectid id;
 		struct team *team;
 
 		memset(id.md, 0xaf, sizeof(id.md));
@@ -158,7 +159,7 @@ namespace {
 
 	TEST_F(ObjectDBTest, InsertTeamTwice) {
 		struct team *team;
-		objectid id;
+		struct objectid id;
 		int err;
 
 		team = objectdb_create_team();
@@ -199,15 +200,15 @@ namespace {
 
 	TEST_F(ObjectDBTest, AddGameAndLookup) {
 		struct game *game1, *game2;
-		objectid id;
+		struct objectid id;
 		int err;
 		bool equal;
 
 		game1 = objectdb_create_game();
 		ASSERT_TRUE(game1 != NULL);
 
-		memset(game1->home_oid.md, 1, OBJECTDB_MD_SIZE);
-		memset(game1->away_oid.md, 2, OBJECTDB_MD_SIZE);
+		memset(game1->home_oid.md, 1, OBJECTID_MD_SIZE);
+		memset(game1->away_oid.md, 2, OBJECTID_MD_SIZE);
 		game1->date = time(NULL);
 
 		err = objectdb_add_game(game1, &id);
@@ -223,7 +224,7 @@ namespace {
 	}
 
 	TEST_F(ObjectDBTest, LookupBogusGame) {
-		objectid id;
+		struct objectid id;
 		struct game *game;
 
 		memset(id.md, 0xaf, sizeof(id.md));
@@ -235,14 +236,14 @@ namespace {
 
 	TEST_F(ObjectDBTest, InsertGameTwice) {
 		struct game *game;
-		objectid id;
+		struct objectid id;
 		int err;
 
 		game = objectdb_create_game();
 		ASSERT_TRUE(game != NULL);
 
-		memset(game->home_oid.md, 1, OBJECTDB_MD_SIZE);
-		memset(game->away_oid.md, 2, OBJECTDB_MD_SIZE);
+		memset(game->home_oid.md, 1, OBJECTID_MD_SIZE);
+		memset(game->away_oid.md, 2, OBJECTID_MD_SIZE);
 		game->date = time(NULL);
 
 		err = objectdb_add_game(game, &id);
@@ -264,9 +265,9 @@ namespace {
 		struct conference *conf;
 		struct team *team1, *team2;
 		struct game *game;
-		objectid conf_oid;
-		objectid team1_oid, team2_oid;
-		objectid game_oid;
+		struct objectid conf_oid;
+		struct objectid team1_oid, team2_oid;
+		struct objectid game_oid;
 		int err;
 
 		/* add conference */
