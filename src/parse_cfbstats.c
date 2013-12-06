@@ -52,6 +52,15 @@ static const int num_file_handlers = (sizeof(file_handlers) /
                                       sizeof(struct file_handler)) - 1;
 
 enum cfbstats_err cfbstats_errno = CFBSTATS_ENONE;
+static const char *cfbstats_errors[] = {
+	"No error",
+	"Error parsing zip file",
+	"Memory allocation failed",
+	"File does not match expected format",
+	"Too many records",
+	"Failed cfbstats id lookup",
+	"Failed objectid lookup"
+};
 
 /* initialization functions */
 
@@ -269,6 +278,10 @@ static int parse_team_csv(struct fieldlist *f)
 	if (objectdb_add_team(team, &oid) != OBJECTDB_OK)
 		return CFBSTATS_ERROR;
 
+	/* add team to id map */
+	if (id_map_insert(id, &oid) != OBJECTDB_OK)
+		return CFBSTATS_ERROR;
+
 	return CFBSTATS_OK;
 }
 
@@ -413,9 +426,22 @@ static int read_csv_file_from_zipfile(zf_readctx *zf,
 			break;
 
 		if (csvp_parse(csvp, buf, bytes) != CSVP_OK) {
-			const char *err = csvp_strerror(csvp);
+			const char *err;
+
+			if (csvp_error(csvp) == CSVP_EPARSE) {
+				/*
+				 * if it is a parsing error, then check our
+				 * own error code since the error originated
+				 * here
+				 */
+				err = cfbstats_strerror();
+				fprintf(stderr, "%s: %s\n", progname, err);
+			}
+
+			err = csvp_strerror(csvp);
 			fprintf(stderr, "%s: %s in %s\n",
 			        progname, err, handler->file);
+
 			return CFBSTATS_ERROR;
 		}
 	}
@@ -491,4 +517,9 @@ int cfbstats_read_zipfile(const char *path)
 		return CFBSTATS_ERROR;
 
 	return CFBSTATS_OK;
+}
+
+const char *cfbstats_strerror(void)
+{
+	return cfbstats_errors[cfbstats_errno];
 }

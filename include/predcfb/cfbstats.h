@@ -15,6 +15,8 @@ enum cfbstats_err {
 };
 
 extern enum cfbstats_err cfbstats_errno;
+extern const char *cfbstats_strerror(void);
+
 extern int cfbstats_read_zipfile(const char *archive);
 
 #endif

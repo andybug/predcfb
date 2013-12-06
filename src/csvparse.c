@@ -133,3 +133,8 @@ const char *csvp_strerror(csvp_ctx *c)
 {
 	return csvparse_errors[c->error];
 }
+
+enum csvp_error csvp_error(csvp_ctx *c)
+{
+	return c->error;
+}
