@@ -2,7 +2,6 @@
 #include <stdlib.h>
 
 #include <libcsv/csv.h>
-
 #include <predcfb/csvparse.h>
 #include <predcfb/fieldlist.h>
 
@@ -11,6 +10,14 @@ struct csvparse_context {
 	enum csvp_error error;
 	struct fieldlist fieldlist;
 	int (*handler)(struct fieldlist*);
+};
+
+static const char *csvparse_errors[] = {
+	"No error",
+	"Memory allocation failed",
+	"Too many fields",
+	"Not enough buffer space for field strings",
+	"Parser error"
 };
 
 static void add_to_fieldlist(void *str, size_t len, void *mydata)
@@ -120,4 +127,9 @@ int csvp_parse(csvp_ctx *c, char *buf, size_t len)
 		return CSVP_ERROR;
 
 	return CSVP_OK;
+}
+
+const char *csvp_strerror(csvp_ctx *c)
+{
+	return csvparse_errors[c->error];
 }

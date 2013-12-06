@@ -21,4 +21,6 @@ extern csvp_ctx *csvp_create(int (*handler)(struct fieldlist*));
 extern int csvp_destroy(csvp_ctx *c);
 extern int csvp_parse(csvp_ctx *c, char *buf, size_t len);
 
+extern const char *csvp_strerror(csvp_ctx *c);
+
 #endif

@@ -15,6 +15,8 @@
 
 #define CFBSTATS_ID_MAP_SIZE 4096
 
+extern const char *progname;
+
 struct map_entry {
 	int id;
 	struct objectid oid;
@@ -399,7 +401,7 @@ static int read_csv_file_from_zipfile(zf_readctx *zf,
 
 	csvp = csvp_create(handler->parsing_func);
 	if (!csvp) {
-		/* TODO: handle csvp error correctly */
+		fprintf(stderr, "%s: csvp initialization error\n", progname);
 		return CFBSTATS_ERROR;
 	}
 
@@ -411,13 +413,17 @@ static int read_csv_file_from_zipfile(zf_readctx *zf,
 			break;
 
 		if (csvp_parse(csvp, buf, bytes) != CSVP_OK) {
-			/* TODO: handle csvp error correctly */
+			const char *err = csvp_strerror(csvp);
+			fprintf(stderr, "%s: %s in %s\n",
+			        progname, err, handler->file);
 			return CFBSTATS_ERROR;
 		}
 	}
 
 	if (csvp_destroy(csvp) != CSVP_OK) {
-		/* TODO: handle csvp error correctly */
+		const char *err = csvp_strerror(csvp);
+		fprintf(stderr, "%s: %s in %s\n",
+		        progname, err, handler->file);
 		return CFBSTATS_ERROR;
 	}
 
