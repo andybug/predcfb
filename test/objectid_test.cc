@@ -84,4 +84,23 @@ namespace {
 		diff = strcmp(buf, conf_sha1);
 		ASSERT_EQ(0, diff);
 	}
+
+	TEST_F(ObjectIDTest, Team)
+	{
+		static const char *team_name = "Texas A&M";
+		static const char *team_sha1 =
+			"f4bfdc649e8390f5c3529d7e25940f67fee3a61f";
+		struct team team;
+		struct objectid oid;
+		char buf[OBJECTID_MD_STR_SIZE];
+		int diff;
+
+		strncpy(team.name, team_name, TEAM_NAME_MAX);
+
+		objectid_from_team(&team, &oid);
+		objectid_string(&oid, buf);
+
+		diff = strcmp(buf, team_sha1);
+		ASSERT_EQ(0, diff);
+	}
 }
