@@ -283,6 +283,8 @@ static int parse_game_csv(struct fieldlist *f)
 		"Site"
 	};
 	static const int NUM_GAME_FIELDS = NUM_FIELDS(fields);
+	/* dates are MM/DD/YYYY HH:MM:SS -ZZZZ */
+	static const int DATE_BUF_SIZE = 26;
 	static bool processed_header = false;
 
 	struct game *game;
@@ -291,6 +293,7 @@ static int parse_game_csv(struct fieldlist *f)
 	int id;
 	const struct objectid *oid;
 	struct objectid game_oid;
+	char date_buf[DATE_BUF_SIZE];
 
 	if (f->num_fields != NUM_GAME_FIELDS) {
 		cfbstats_errno = CFBSTATS_EINVALIDFILE;
@@ -314,7 +317,8 @@ static int parse_game_csv(struct fieldlist *f)
 
 	/* date in the format 08/29/2013 */
 	str = fieldlist_iter_next(f);
-	lastchar = strptime(str, "%D", &tm);
+	snprintf(date_buf, DATE_BUF_SIZE, "%s 00:00:00 +0000", str);
+	lastchar = strptime(date_buf, "%m/%d/%Y %H:%M:%S %z", &tm);
 	if (!lastchar || *lastchar != '\0') {
 		cfbstats_errno = CFBSTATS_EINVALIDFILE;
 		return CFBSTATS_ERROR;
