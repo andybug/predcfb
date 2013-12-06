@@ -10,6 +10,7 @@ ADD_LIBRARY(
 	fieldlist.c
 	objectdb.c
 	objectid.c
+	options.c
 	parse_cfbstats.c
 	zipfile.c
 )
