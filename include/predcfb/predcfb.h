@@ -19,6 +19,29 @@ struct conference {
 	enum conference_division subdivision;
 };
 
+struct stats {
+	short rush_att;
+	short rush_yds;
+	short rush_tds;
+
+	short pass_att;
+	short pass_comp;
+	short pass_yds;
+	short pass_tds;
+	short pass_int;
+
+	short fg_att;
+	short fg_made;
+
+	short fumbles;
+	short fumbles_lost;
+
+	short penalties;
+	short penalty_yds;
+
+	short points;
+};
+
 #define TEAM_NAME_MAX   64
 #define TEAM_NUM_MAX   256
 
@@ -26,6 +49,7 @@ struct team {
 	char name[TEAM_NAME_MAX];
 	struct objectid conf_oid;
 	struct conference *conf;
+	struct stats stats;
 };
 
 #define GAME_NUM_MAX 2048
@@ -37,9 +61,8 @@ struct game {
 	struct team *away;
 	bool neutral;
 	time_t date;
-
-	short home_rush_att;
-	short home_rush_yds;
+	struct stats home_stats;
+	struct stats away_stats;
 };
 
 #endif

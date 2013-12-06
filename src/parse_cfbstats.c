@@ -6,6 +6,8 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <time.h>
+#include <stddef.h>
+#include <stdint.h>
 
 #include <predcfb/cfbstats.h>
 #include <predcfb/predcfb.h>
@@ -434,6 +436,23 @@ static int parse_game_csv(struct fieldlist *f)
 
 /* parse team-game-statistics.csv */
 
+static void set_stat_value(struct game *g, size_t field_off,
+                           bool home, short val)
+{
+	intptr_t field_addr;
+	short *field;
+
+	if (home) {
+		field_addr = ((intptr_t)&g->home_stats) + field_off;
+		field = (short*)field_addr;
+		*field = val;
+	} else {
+		field_addr = ((intptr_t)&g->away_stats) + field_off;
+		field = (short*)field_addr;
+		*field = val;
+	}
+}
+
 int parse_stats_csv(struct fieldlist *f)
 {
 	static const char *fields[] = {
@@ -513,8 +532,7 @@ int parse_stats_csv(struct fieldlist *f)
 	int id;
 	struct team *team;
 	struct game *game;
-	const objectid *oid;
-	int ival;
+	const struct objectid *oid;
 	short sval;
 	bool home;
 
@@ -560,15 +578,171 @@ int parse_stats_csv(struct fieldlist *f)
 		return CFBSTATS_ERROR;
 	}
 
-	/* skip rush attempts */
-	str = fieldlist_iter_next(f);
+	/* check whether we are parsing the home team or not */
+	if (game->home == team) {
+		home = true;
+	} else {
+		home = false;
+	}
+
+	/* rush attempts */
+	if (fieldlist_iter_next_short(f, &sval) != FIELDLIST_OK) {
+		cfbstats_errno = CFBSTATS_EINVALIDFILE;
+		return CFBSTATS_ERROR;
+	}
+	set_stat_value(game, offsetof(struct stats, rush_att), home, sval);
 
 	/* rush yards */
 	if (fieldlist_iter_next_short(f, &sval) != FIELDLIST_OK) {
 		cfbstats_errno = CFBSTATS_EINVALIDFILE;
 		return CFBSTATS_ERROR;
 	}
-	game->home_rush_yards = sval;
+	set_stat_value(game, offsetof(struct stats, rush_yds), home, sval);
+
+	/* rush tds */
+	if (fieldlist_iter_next_short(f, &sval) != FIELDLIST_OK) {
+		cfbstats_errno = CFBSTATS_EINVALIDFILE;
+		return CFBSTATS_ERROR;
+	}
+	set_stat_value(game, offsetof(struct stats, rush_tds), home, sval);
+
+	/* pass attempts */
+	if (fieldlist_iter_next_short(f, &sval) != FIELDLIST_OK) {
+		cfbstats_errno = CFBSTATS_EINVALIDFILE;
+		return CFBSTATS_ERROR;
+	}
+	set_stat_value(game, offsetof(struct stats, pass_att), home, sval);
+
+	/* pass completions */
+	if (fieldlist_iter_next_short(f, &sval) != FIELDLIST_OK) {
+		cfbstats_errno = CFBSTATS_EINVALIDFILE;
+		return CFBSTATS_ERROR;
+	}
+	set_stat_value(game, offsetof(struct stats, pass_comp), home, sval);
+
+	/* pass yards */
+	if (fieldlist_iter_next_short(f, &sval) != FIELDLIST_OK) {
+		cfbstats_errno = CFBSTATS_EINVALIDFILE;
+		return CFBSTATS_ERROR;
+	}
+	set_stat_value(game, offsetof(struct stats, pass_yds), home, sval);
+
+	/* pass tds */
+	if (fieldlist_iter_next_short(f, &sval) != FIELDLIST_OK) {
+		cfbstats_errno = CFBSTATS_EINVALIDFILE;
+		return CFBSTATS_ERROR;
+	}
+	set_stat_value(game, offsetof(struct stats, pass_tds), home, sval);
+
+	/* pass interceptions */
+	if (fieldlist_iter_next_short(f, &sval) != FIELDLIST_OK) {
+		cfbstats_errno = CFBSTATS_EINVALIDFILE;
+		return CFBSTATS_ERROR;
+	}
+	set_stat_value(game, offsetof(struct stats, pass_int), home, sval);
+
+	/* skip these fields */
+	fieldlist_iter_next(f);
+	fieldlist_iter_next(f);
+	fieldlist_iter_next(f);
+	fieldlist_iter_next(f);
+	fieldlist_iter_next(f);
+	fieldlist_iter_next(f);
+	fieldlist_iter_next(f);
+	fieldlist_iter_next(f);
+	fieldlist_iter_next(f);
+	fieldlist_iter_next(f);
+	fieldlist_iter_next(f);
+	fieldlist_iter_next(f);
+	fieldlist_iter_next(f);
+	fieldlist_iter_next(f);
+	fieldlist_iter_next(f);
+	fieldlist_iter_next(f);
+
+	/* field goals attempted */
+	if (fieldlist_iter_next_short(f, &sval) != FIELDLIST_OK) {
+		cfbstats_errno = CFBSTATS_EINVALIDFILE;
+		return CFBSTATS_ERROR;
+	}
+	set_stat_value(game, offsetof(struct stats, fg_att), home, sval);
+
+	/* field goals made */
+	if (fieldlist_iter_next_short(f, &sval) != FIELDLIST_OK) {
+		cfbstats_errno = CFBSTATS_EINVALIDFILE;
+		return CFBSTATS_ERROR;
+	}
+	set_stat_value(game, offsetof(struct stats, fg_made), home, sval);
+
+	/* skip these fields */
+	fieldlist_iter_next(f);
+	fieldlist_iter_next(f);
+	fieldlist_iter_next(f);
+	fieldlist_iter_next(f);
+	fieldlist_iter_next(f);
+	fieldlist_iter_next(f);
+	fieldlist_iter_next(f);
+
+	/* points */
+	if (fieldlist_iter_next_short(f, &sval) != FIELDLIST_OK) {
+		cfbstats_errno = CFBSTATS_EINVALIDFILE;
+		return CFBSTATS_ERROR;
+	}
+	set_stat_value(game, offsetof(struct stats, points), home, sval);
+
+	/* skip these fields */
+	fieldlist_iter_next(f);
+	fieldlist_iter_next(f);
+	fieldlist_iter_next(f);
+	fieldlist_iter_next(f);
+	fieldlist_iter_next(f);
+	fieldlist_iter_next(f);
+	fieldlist_iter_next(f);
+
+	/* fumbles */
+	if (fieldlist_iter_next_short(f, &sval) != FIELDLIST_OK) {
+		cfbstats_errno = CFBSTATS_EINVALIDFILE;
+		return CFBSTATS_ERROR;
+	}
+	set_stat_value(game, offsetof(struct stats, fumbles), home, sval);
+
+	/* fumbles lost */
+	if (fieldlist_iter_next_short(f, &sval) != FIELDLIST_OK) {
+		cfbstats_errno = CFBSTATS_EINVALIDFILE;
+		return CFBSTATS_ERROR;
+	}
+	set_stat_value(game, offsetof(struct stats, fumbles_lost), home, sval);
+
+	/* skip these fields */
+	fieldlist_iter_next(f);
+	fieldlist_iter_next(f);
+	fieldlist_iter_next(f);
+	fieldlist_iter_next(f);
+	fieldlist_iter_next(f);
+	fieldlist_iter_next(f);
+	fieldlist_iter_next(f);
+	fieldlist_iter_next(f);
+	fieldlist_iter_next(f);
+	fieldlist_iter_next(f);
+	fieldlist_iter_next(f);
+	fieldlist_iter_next(f);
+	fieldlist_iter_next(f);
+	fieldlist_iter_next(f);
+
+	/* penalties */
+	if (fieldlist_iter_next_short(f, &sval) != FIELDLIST_OK) {
+		cfbstats_errno = CFBSTATS_EINVALIDFILE;
+		return CFBSTATS_ERROR;
+	}
+	set_stat_value(game, offsetof(struct stats, penalties), home, sval);
+
+	/* penalty yards */
+	if (fieldlist_iter_next_short(f, &sval) != FIELDLIST_OK) {
+		cfbstats_errno = CFBSTATS_EINVALIDFILE;
+		return CFBSTATS_ERROR;
+	}
+	set_stat_value(game, offsetof(struct stats, penalty_yds), home, sval);
+
+	/* ignore the rest */
 
 	return CFBSTATS_OK;
 }
