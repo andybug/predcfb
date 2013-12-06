@@ -1,6 +1,8 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <time.h>
+#include <assert.h>
 
 #include <polarssl/sha1.h>
 #include <predcfb/objectid.h>
@@ -71,7 +73,17 @@ void objectid_from_team(const struct team *t, struct objectid *id)
 
 void objectid_from_game(const struct game *g, struct objectid *id)
 {
+	/* date format is YYYY-MM-DD\0 */
+	static const int DATE_BUF_SIZE = 11;
+	char date_buf[DATE_BUF_SIZE];
+	struct tm tm;
+	size_t num_bytes;
 	sha1_context ctx;
+
+	/* create date string */
+	gmtime_r(&g->date, &tm);
+	num_bytes = strftime(date_buf, DATE_BUF_SIZE, "%Y-%m-%d", &tm);
+	assert(num_bytes == DATE_BUF_SIZE - 1);
 
 	sha1_starts(&ctx);
 
@@ -80,7 +92,7 @@ void objectid_from_game(const struct game *g, struct objectid *id)
 	/* hash away team oid */
 	sha1_update(&ctx, g->away_oid.md, OBJECTID_MD_SIZE);
 	/* hash time_t */
-	sha1_update(&ctx, (unsigned char*) &g->date, sizeof(time_t));
+	sha1_update(&ctx, (unsigned char*)date_buf, DATE_BUF_SIZE - 1);
 
 	sha1_finish(&ctx, id->md);
 }

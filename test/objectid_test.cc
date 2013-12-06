@@ -1,4 +1,5 @@
 
+#include <time.h>
 #include <iostream>
 
 #include <gtest/gtest.h>
@@ -101,6 +102,45 @@ namespace {
 		objectid_string(&oid, buf);
 
 		diff = strcmp(buf, team_sha1);
+		ASSERT_EQ(0, diff);
+	}
+
+	TEST_F(ObjectIDTest, Game)
+	{
+		static const char *team1_name = "Alabama";
+		static const char *team2_name = "LSU";
+		static const char *game_date = "2013-12-01 00:00:00 +0000";
+		static const char *game_sha1 =
+			"1ac81af1a151207ae9addc395ffe609911ba8b11";
+		// game_sha1 was calculated by hand using xxd and sha1sum
+		// for this example
+		struct team team1;
+		struct team team2;
+		struct game game;
+		struct objectid oid1;
+		struct objectid oid2;
+		struct objectid oid;
+		char buf[OBJECTID_MD_STR_SIZE];
+		struct tm tm;
+		int diff;
+
+		strncpy(team1.name, team1_name, TEAM_NAME_MAX);
+		strncpy(team2.name, team2_name, TEAM_NAME_MAX);
+
+		objectid_from_team(&team1, &oid1);
+		objectid_from_team(&team2, &oid2);
+
+		game.home_oid = oid1;
+		game.away_oid = oid2;
+
+		// times are always GMT
+		strptime(game_date, "%Y-%m-%d %H:%M:%S %z", &tm);
+		game.date = mktime(&tm);
+
+		objectid_from_game(&game, &oid);
+		objectid_string(&oid, buf);
+
+		diff = strcmp(buf, game_sha1);
 		ASSERT_EQ(0, diff);
 	}
 }
