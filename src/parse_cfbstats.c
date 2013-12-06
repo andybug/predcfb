@@ -579,11 +579,7 @@ int parse_stats_csv(struct fieldlist *f)
 	}
 
 	/* check whether we are parsing the home team or not */
-	if (game->home == team) {
-		home = true;
-	} else {
-		home = false;
-	}
+	home = game->home == team ? true : false;
 
 	/* rush attempts */
 	if (fieldlist_iter_next_short(f, &sval) != FIELDLIST_OK) {
