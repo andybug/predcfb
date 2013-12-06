@@ -509,6 +509,15 @@ int parse_stats_csv(struct fieldlist *f)
 	static const int NUM_STAT_FIELDS = NUM_FIELDS(fields);
 	static bool processed_header = false;
 
+	const char *str;
+	int id;
+	struct team *team;
+	struct game *game;
+	const objectid *oid;
+	int ival;
+	short sval;
+	bool home;
+
 	if (f->num_fields != NUM_STAT_FIELDS) {
 		cfbstats_errno = CFBSTATS_EINVALIDFILE;
 		return CFBSTATS_ERROR;
@@ -518,6 +527,48 @@ int parse_stats_csv(struct fieldlist *f)
 		processed_header = true;
 		return check_csv_header(f, fields, NUM_STAT_FIELDS);
 	}
+
+	fieldlist_iter_begin(f);
+
+	/* get team pointer from team code */
+	if (fieldlist_iter_next_int(f, &id) != FIELDLIST_OK) {
+		cfbstats_errno = CFBSTATS_EINVALIDFILE;
+		return CFBSTATS_ERROR;
+	}
+
+	if ((oid = id_map_lookup(id)) == NULL) {
+		cfbstats_errno = CFBSTATS_EIDLOOKUP;
+		return CFBSTATS_ERROR;
+	}
+
+	if ((team = objectdb_get_team(oid)) == NULL) {
+		cfbstats_errno = CFBSTATS_EOIDLOOKUP;
+		return CFBSTATS_ERROR;
+	}
+
+	/* get game pointer from game code */
+	str = fieldlist_iter_next(f);
+	id = pack_game_code(str);
+
+	if ((oid = id_map_lookup(id)) == NULL) {
+		cfbstats_errno = CFBSTATS_EIDLOOKUP;
+		return CFBSTATS_ERROR;
+	}
+
+	if ((game = objectdb_get_game(oid)) == NULL) {
+		cfbstats_errno = CFBSTATS_EOIDLOOKUP;
+		return CFBSTATS_ERROR;
+	}
+
+	/* skip rush attempts */
+	str = fieldlist_iter_next(f);
+
+	/* rush yards */
+	if (fieldlist_iter_next_short(f, &sval) != FIELDLIST_OK) {
+		cfbstats_errno = CFBSTATS_EINVALIDFILE;
+		return CFBSTATS_ERROR;
+	}
+	game->home_rush_yards = sval;
 
 	return CFBSTATS_OK;
 }

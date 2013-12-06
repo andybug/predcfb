@@ -37,6 +37,9 @@ struct game {
 	struct team *away;
 	bool neutral;
 	time_t date;
+
+	short home_rush_att;
+	short home_rush_yds;
 };
 
 #endif
