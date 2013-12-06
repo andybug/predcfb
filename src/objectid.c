@@ -54,19 +54,10 @@ bool objectid_compare(const struct objectid *a, const struct objectid *b)
 void objectid_from_conference(const struct conference *c, struct objectid *id)
 {
 	size_t len;
-	sha1_context ctx;
 
-	sha1_starts(&ctx);
-
-	/* hash name */
+	/* just hash name */
 	len = strlen(c->name);
-	sha1_update(&ctx, (unsigned char*) c->name, len);
-
-	/* hash subdivision */
-	len = sizeof(c->subdivision);
-	sha1_update(&ctx, (unsigned char*) &c->subdivision, len);
-
-	sha1_finish(&ctx, id->md);
+	sha1((unsigned char*) c->name, len, id->md);
 }
 
 void objectid_from_team(const struct team *t, struct objectid *id)
