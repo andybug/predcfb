@@ -7,11 +7,15 @@ const char *progname;
 
 bool opt_help = false;
 bool opt_version = false;
+bool opt_save = false;
+
 const char *opt_archive = NULL;
+const char *opt_save_file = "predcfb.yaml";
 
 enum long_opts {
 	LONG_OPT_HELP,
-	LONG_OPT_VERSION
+	LONG_OPT_VERSION,
+	LONG_OPT_SAVE
 };
 
 int options_parse(int argc, char **argv)
@@ -22,6 +26,7 @@ int options_parse(int argc, char **argv)
 	static const struct option long_options[] = {
 		{ "help", 0, NULL, LONG_OPT_HELP },
 		{ "version", 0, NULL, LONG_OPT_VERSION },
+		{ "save", 2, NULL, LONG_OPT_SAVE },
 		{ NULL, 0, NULL, 0 }
 	};
 
@@ -35,6 +40,12 @@ int options_parse(int argc, char **argv)
 		case LONG_OPT_VERSION:
 			opt_version = true;
 			require_file = false;
+			break;
+
+		case LONG_OPT_SAVE:
+			opt_save = true;
+			if (optarg)
+				opt_save_file = optarg;
 			break;
 
 		case '?':
