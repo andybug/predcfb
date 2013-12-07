@@ -10,7 +10,7 @@ bool opt_version = false;
 bool opt_save = false;
 
 const char *opt_archive = NULL;
-const char *opt_save_file = "predcfb.yaml";
+const char *opt_save_file = "predcfb.yml";
 
 enum long_opts {
 	LONG_OPT_HELP,
