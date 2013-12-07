@@ -32,6 +32,7 @@ TARGET_LINK_LIBRARIES(
 	gtest
 	# --- shared libraries ---
 	pthread
+	yaml
 	z
 )
 

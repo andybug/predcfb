@@ -34,6 +34,7 @@ TARGET_LINK_LIBRARIES(
 	polarssl
 	libb64
 	# --- shared libraries ---
+	yaml
 	z
 )
 
