@@ -70,13 +70,6 @@ static int end_yaml(struct save_context *ctx)
 	return OBJECTDB_OK;
 }
 
-static int emit_conference(struct save_context *ctx, const struct object *o)
-{
-	int err;
-
-	return OBJECTDB_OK;
-}
-
 static int emit_object_type(struct save_context *ctx, const struct object *o)
 {
 	int err;
@@ -143,10 +136,78 @@ static int emit_object_sha1(struct save_context *ctx, const struct object *o)
 	return OBJECTDB_OK;
 }
 
+static int emit_conference(struct save_context *ctx, const struct object *o)
+{
+	int err;
+	size_t len;
+	const char *subdivision = "UNK";
+
+	err = yaml_scalar_event_initialize(&ctx->event, NULL, NULL, (unsigned char*)"conference", 10, 1, 0, YAML_PLAIN_SCALAR_STYLE);
+	if (err == 0)
+		return OBJECTDB_ERROR;
+
+	if (!yaml_emitter_emit(&ctx->emitter, &ctx->event))
+		return OBJECTDB_ERROR;
+
+	err = yaml_mapping_start_event_initialize(&ctx->event, NULL, NULL, 0, YAML_BLOCK_MAPPING_STYLE);
+	if (err == 0)
+		return OBJECTDB_ERROR;
+
+	if (!yaml_emitter_emit(&ctx->emitter, &ctx->event))
+		return OBJECTDB_ERROR;
+
+	err = yaml_scalar_event_initialize(&ctx->event, NULL, NULL, (unsigned char*)"name", 4, 1, 0, YAML_PLAIN_SCALAR_STYLE);
+	if (err == 0)
+		return OBJECTDB_ERROR;
+
+	if (!yaml_emitter_emit(&ctx->emitter, &ctx->event))
+		return OBJECTDB_ERROR;
+
+	len = strlen(o->data.conf->name);
+
+	err = yaml_scalar_event_initialize(&ctx->event, NULL, NULL, (unsigned char*)o->data.conf->name, (int)len, 1, 0, YAML_PLAIN_SCALAR_STYLE);
+	if (err == 0)
+		return OBJECTDB_ERROR;
+
+	if (!yaml_emitter_emit(&ctx->emitter, &ctx->event))
+		return OBJECTDB_ERROR;
+
+	err = yaml_scalar_event_initialize(&ctx->event, NULL, NULL, (unsigned char*)"subdivision", 11, 1, 0, YAML_PLAIN_SCALAR_STYLE);
+	if (err == 0)
+		return OBJECTDB_ERROR;
+
+	if (!yaml_emitter_emit(&ctx->emitter, &ctx->event))
+		return OBJECTDB_ERROR;
+
+	switch (o->data.conf->subdivision) {
+	case CONFERENCE_FBS:
+		subdivision = "FBS";
+		break;
+
+	case CONFERENCE_FCS:
+		subdivision = "FCS";
+		break;
+	}
+
+	err = yaml_scalar_event_initialize(&ctx->event, NULL, NULL, (unsigned char*)subdivision, 3, 1, 0, YAML_PLAIN_SCALAR_STYLE);
+	if (err == 0)
+		return OBJECTDB_ERROR;
+
+	if (!yaml_emitter_emit(&ctx->emitter, &ctx->event))
+		return OBJECTDB_ERROR;
+
+	if (!yaml_mapping_end_event_initialize(&ctx->event))
+		return OBJECTDB_ERROR;
+
+	if (!yaml_emitter_emit(&ctx->emitter, &ctx->event))
+		return OBJECTDB_ERROR;
+
+	return OBJECTDB_OK;
+}
+
 static int emit_object(struct save_context *ctx, const struct object *o)
 {
 	int err;
-	const char *typestr;
 
 	err = yaml_mapping_start_event_initialize(&ctx->event, NULL, NULL, 0, YAML_BLOCK_MAPPING_STYLE);
 	if (err == 0)
@@ -160,6 +221,13 @@ static int emit_object(struct save_context *ctx, const struct object *o)
 
 	if (emit_object_sha1(ctx, o) != OBJECTDB_OK)
 		return OBJECTDB_ERROR;
+
+	switch (o->type) {
+	case OBJECTDB_CONF:
+		if (emit_conference(ctx, o) != OBJECTDB_OK)
+			return OBJECTDB_ERROR;
+		break;
+	}
 
 	if (!yaml_mapping_end_event_initialize(&ctx->event))
 		return OBJECTDB_ERROR;
@@ -175,7 +243,7 @@ static int emit_objects(struct save_context *ctx)
 	int i;
 	int err;
 
-	err = yaml_sequence_start_event_initialize(&ctx->event, NULL, (unsigned char*)"objects", 0, YAML_BLOCK_SEQUENCE_STYLE);
+	err = yaml_sequence_start_event_initialize(&ctx->event, NULL, NULL, 0, YAML_BLOCK_SEQUENCE_STYLE);
 	if (err == 0)
 		return OBJECTDB_ERROR;
 
