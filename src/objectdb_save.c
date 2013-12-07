@@ -279,6 +279,27 @@ static int emit_conference(struct save_context *ctx, const struct object *o)
 	return OBJECTDB_OK;
 }
 
+static int emit_team(struct save_context *ctx, const struct object *o)
+{
+	char buf[OBJECTID_MD_STR_SIZE];
+
+	objectid_string(&o->data.team->conf_oid, buf);
+
+	if (emit_scalar_map(ctx, "team") != OBJECTDB_OK)
+		return OBJECTDB_ERROR;
+
+	if (emit_scalar(ctx, "name", o->data.team->name) != OBJECTDB_OK)
+		return OBJECTDB_ERROR;
+
+	if (emit_scalar(ctx, "conf_sha1", buf) != OBJECTDB_OK)
+		return OBJECTDB_ERROR;
+
+	if (emit_map_end(ctx) != OBJECTDB_OK)
+		return OBJECTDB_ERROR;
+
+	return OBJECTDB_OK;
+}
+
 static int emit_object(struct save_context *ctx, const struct object *o)
 {
 	if (emit_map_begin(ctx) != OBJECTDB_OK)
@@ -293,6 +314,11 @@ static int emit_object(struct save_context *ctx, const struct object *o)
 	switch (o->type) {
 	case OBJECTDB_CONF:
 		if (emit_conference(ctx, o) != OBJECTDB_OK)
+			return OBJECTDB_ERROR;
+		break;
+
+	case OBJECTDB_TEAM:
+		if (emit_team(ctx, o) != OBJECTDB_OK)
 			return OBJECTDB_ERROR;
 		break;
 	}
