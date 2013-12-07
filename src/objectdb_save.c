@@ -8,6 +8,7 @@
 #include <predcfb/predcfb.h>
 #include <predcfb/options.h>
 #include <predcfb/objectdb.h>
+#include <predcfb/objectid.h>
 
 #include "objectdb_internal.h"
 
@@ -69,12 +70,112 @@ static int end_yaml(struct save_context *ctx)
 	return OBJECTDB_OK;
 }
 
+static int emit_conference(struct save_context *ctx, const struct object *o)
+{
+	int err;
+
+	return OBJECTDB_OK;
+}
+
+static int emit_object_type(struct save_context *ctx, const struct object *o)
+{
+	int err;
+	const char *typestr = "UNKN";
+
+	/* get a string representation of the type enum */
+	switch (o->type) {
+	case OBJECTDB_CONF:
+		typestr = "CONF";
+		break;
+
+	case OBJECTDB_TEAM:
+		typestr = "TEAM";
+		break;
+
+	case OBJECTDB_GAME:
+		typestr = "GAME";
+		break;
+
+	case OBJECTDB_BLOB:
+		typestr = "BLOB";
+		break;
+	}
+
+	err = yaml_scalar_event_initialize(&ctx->event, NULL, NULL, (unsigned char*)"type", 4, 1, 0, YAML_PLAIN_SCALAR_STYLE);
+	if (err == 0)
+		return OBJECTDB_ERROR;
+
+	if (!yaml_emitter_emit(&ctx->emitter, &ctx->event))
+		return OBJECTDB_ERROR;
+
+	err = yaml_scalar_event_initialize(&ctx->event, NULL, NULL, (unsigned char*)typestr, 4, 1, 0, YAML_PLAIN_SCALAR_STYLE);
+	if (err == 0)
+		return OBJECTDB_ERROR;
+
+	if (!yaml_emitter_emit(&ctx->emitter, &ctx->event))
+		return OBJECTDB_ERROR;
+
+	return OBJECTDB_OK;
+}
+
+static int emit_object_sha1(struct save_context *ctx, const struct object *o)
+{
+	char buf[OBJECTID_MD_STR_SIZE];
+	int len = OBJECTID_MD_STR_SIZE - 1;
+	int err;
+
+	objectid_string(&o->id, buf);
+
+	err = yaml_scalar_event_initialize(&ctx->event, NULL, NULL, (unsigned char*)"sha1", 4, 1, 0, YAML_PLAIN_SCALAR_STYLE);
+	if (err == 0)
+		return OBJECTDB_ERROR;
+
+	if (!yaml_emitter_emit(&ctx->emitter, &ctx->event))
+		return OBJECTDB_ERROR;
+
+	err = yaml_scalar_event_initialize(&ctx->event, NULL, NULL, (unsigned char*)buf, len, 1, 0, YAML_PLAIN_SCALAR_STYLE);
+	if (err == 0)
+		return OBJECTDB_ERROR;
+
+	if (!yaml_emitter_emit(&ctx->emitter, &ctx->event))
+		return OBJECTDB_ERROR;
+
+	return OBJECTDB_OK;
+}
+
+static int emit_object(struct save_context *ctx, const struct object *o)
+{
+	int err;
+	const char *typestr;
+
+	err = yaml_mapping_start_event_initialize(&ctx->event, NULL, NULL, 0, YAML_BLOCK_MAPPING_STYLE);
+	if (err == 0)
+		return OBJECTDB_ERROR;
+
+	if (!yaml_emitter_emit(&ctx->emitter, &ctx->event))
+		return OBJECTDB_ERROR;
+
+	if (emit_object_type(ctx, o) != OBJECTDB_OK)
+		return OBJECTDB_ERROR;
+
+	if (emit_object_sha1(ctx, o) != OBJECTDB_OK)
+		return OBJECTDB_ERROR;
+
+	if (!yaml_mapping_end_event_initialize(&ctx->event))
+		return OBJECTDB_ERROR;
+
+	if (!yaml_emitter_emit(&ctx->emitter, &ctx->event))
+		return OBJECTDB_ERROR;
+
+	return OBJECTDB_OK;
+}
+
 static int emit_objects(struct save_context *ctx)
 {
 	int i;
 	int err;
 
-	err = yaml_mapping_start_event_initialize(&ctx->event, NULL, (unsigned char*)"tag:objects:map", 0, YAML_BLOCK_MAPPING_STYLE);
+	err = yaml_sequence_start_event_initialize(&ctx->event, NULL, (unsigned char*)"objects", 0, YAML_BLOCK_SEQUENCE_STYLE);
 	if (err == 0)
 		return OBJECTDB_ERROR;
 
@@ -82,10 +183,11 @@ static int emit_objects(struct save_context *ctx)
 		return OBJECTDB_ERROR;
 
 	for (i = 0; i < ctx->num_objects; i++) {
-		printf("%04d %d\n", i, (int)ctx->objects[i].type);
+		if (emit_object(ctx, &ctx->objects[i]) != OBJECTDB_OK)
+			return OBJECTDB_ERROR;
 	}
 
-	if (!yaml_mapping_end_event_initialize(&ctx->event))
+	if (!yaml_sequence_end_event_initialize(&ctx->event))
 		return OBJECTDB_ERROR;
 
 	if (!yaml_emitter_emit(&ctx->emitter, &ctx->event))
