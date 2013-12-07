@@ -5,6 +5,7 @@
 #include <config.h>
 #include <predcfb/options.h>
 #include <predcfb/cfbstats.h>
+#include <predcfb/objectdb.h>
 
 static void print_help(void)
 {
@@ -40,6 +41,9 @@ int main(int argc, char **argv)
 		print_version();
 
 	if (cfbstats_read_zipfile(opt_archive) != CFBSTATS_OK)
+		exit(EXIT_FAILURE);
+
+	if (opt_save && (objectdb_save() != OBJECTDB_OK))
 		exit(EXIT_FAILURE);
 
 	exit(EXIT_SUCCESS);

@@ -9,28 +9,10 @@
 #include <predcfb/objectid.h>
 #include <predcfb/objectdb.h>
 
+#include "objectdb_internal.h"
+
 #define OBJECTDB_MAX_OBJECTS   4096
 #define OBJECTDB_MAP_SIZE      2048
-
-enum object_type {
-	OBJECTDB_CONF,
-	OBJECTDB_TEAM,
-	OBJECTDB_GAME,
-	OBJECTDB_BLOB
-};
-
-union object_data {
-	struct conference *conf;
-	struct team *team;
-	struct game *game;
-};
-
-struct object {
-	struct objectid id;
-	enum object_type type;
-	union object_data data;
-	struct object *next;
-};
 
 static struct object object_table[OBJECTDB_MAX_OBJECTS];
 static int num_objects = 0;
@@ -344,4 +326,9 @@ int objectdb_link(void)
 	}
 
 	return OBJECTDB_OK;
+}
+
+int objectdb_save(void)
+{
+	return objectdb_save_yaml(object_table, num_objects);
 }
