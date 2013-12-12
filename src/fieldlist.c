@@ -90,13 +90,54 @@ const char *fieldlist_iter_next(struct fieldlist *f)
 
 int fieldlist_iter_next_int(struct fieldlist *f, int *out)
 {
-	long int li;
-	char *endptr;
 	const char *str;
 
 	if ((str = fieldlist_iter_next(f)) == NULL)
 		return FIELDLIST_ERROR;
 
+	if (fieldlist_int_at(f, f->iter, out) != FIELDLIST_OK)
+		return FIELDLIST_ERROR;
+
+	return FIELDLIST_OK;
+}
+
+int fieldlist_iter_next_short(struct fieldlist *f, short *out)
+{
+	const char *str;
+
+	if ((str = fieldlist_iter_next(f)) == NULL)
+		return FIELDLIST_ERROR;
+
+	if (fieldlist_short_at(f, f->iter, out) != FIELDLIST_OK)
+		return FIELDLIST_ERROR;
+
+	return FIELDLIST_OK;
+}
+
+int fieldlist_str_at(struct fieldlist *f, int at, const char **out)
+{
+	if (at < 0 || at >= f->num_fields) {
+		f->error = FIELDLIST_EINDEX;
+		return FIELDLIST_ERROR;
+	}
+	
+	*out = f->fields[at];
+
+	return FIELDLIST_OK;
+}
+
+int fieldlist_int_at(struct fieldlist *f, int at, int *out)
+{
+	long int li;
+	char *endptr;
+	const char *str;
+
+	if (at < 0 || at >= f->num_fields) {
+		f->error = FIELDLIST_EINDEX;
+		return FIELDLIST_ERROR;
+	}
+
+	str = f->fields[at];
 	li = strtol(str, &endptr, 10);
 
 	if (*endptr != '\0') {
@@ -119,15 +160,18 @@ int fieldlist_iter_next_int(struct fieldlist *f, int *out)
 	return FIELDLIST_OK;
 }
 
-int fieldlist_iter_next_short(struct fieldlist *f, short *out)
+int fieldlist_short_at(struct fieldlist *f, int at, short *out)
 {
 	long int li;
 	char *endptr;
 	const char *str;
 
-	if ((str = fieldlist_iter_next(f)) == NULL)
+	if (at < 0 || at >= f->num_fields) {
+		f->error = FIELDLIST_EINDEX;
 		return FIELDLIST_ERROR;
+	}
 
+	str = f->fields[at];
 	li = strtol(str, &endptr, 10);
 
 	if (*endptr != '\0') {
