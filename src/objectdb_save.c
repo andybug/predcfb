@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <errno.h>
 #include <string.h>
+#include <time.h>
 
 #include <yaml.h>
 
@@ -300,6 +301,36 @@ static int emit_team(struct save_context *ctx, const struct object *o)
 	return OBJECTDB_OK;
 }
 
+static int emit_game(struct save_context *ctx, const struct object *o)
+{
+	const int date_len = 11;
+	char buf[OBJECTID_MD_STR_SIZE];
+	char date[date_len];
+	struct tm tm;
+
+	if (emit_scalar_map(ctx, "game") != OBJECTDB_OK)
+		return OBJECTDB_ERROR;
+
+	gmtime_r(&o->data.game->date, &tm);
+	strftime(date, date_len, "%F", &tm);
+
+	if (emit_scalar(ctx, "date", date) != OBJECTDB_OK)
+		return OBJECTDB_ERROR;
+
+	objectid_string(&o->data.game->home_oid, buf);
+	if (emit_scalar(ctx, "home_sha1", buf) != OBJECTDB_OK)
+		return OBJECTDB_ERROR;
+
+	objectid_string(&o->data.game->away_oid, buf);
+	if (emit_scalar(ctx, "away_sha1", buf) != OBJECTDB_OK)
+		return OBJECTDB_ERROR;
+
+	if (emit_map_end(ctx) != OBJECTDB_OK)
+		return OBJECTDB_ERROR;
+
+	return OBJECTDB_OK;
+}
+
 static int emit_object(struct save_context *ctx, const struct object *o)
 {
 	if (emit_map_begin(ctx) != OBJECTDB_OK)
@@ -320,6 +351,15 @@ static int emit_object(struct save_context *ctx, const struct object *o)
 	case OBJECTDB_TEAM:
 		if (emit_team(ctx, o) != OBJECTDB_OK)
 			return OBJECTDB_ERROR;
+		break;
+
+	case OBJECTDB_GAME:
+		if (emit_game(ctx, o) != OBJECTDB_OK)
+			return OBJECTDB_ERROR;
+		break;
+
+	case OBJECTDB_BLOB:
+		/* do nothing for now */
 		break;
 	}
 
