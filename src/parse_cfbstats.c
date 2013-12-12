@@ -8,6 +8,7 @@
 #include <time.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <limits.h>
 
 #include <predcfb/cfbstats.h>
 #include <predcfb/predcfb.h>
@@ -22,6 +23,23 @@ extern const char *progname;
 struct map_entry {
 	int id;
 	struct objectid oid;
+};
+
+enum field_type {
+	FIELD_TYPE_END,
+	FIELD_TYPE_ID,
+	FIELD_TYPE_STR,
+	FIELD_TYPE_SHORT,
+	/* special types */
+	FIELD_TYPE_CONFERENCE_ENUM
+};
+
+struct field_handler {
+	int index;
+	const char *name;
+	enum field_type type;
+	size_t len;
+	size_t offset;
 };
 
 enum file_type {
@@ -165,6 +183,8 @@ static int pack_game_code(const char *str)
 
 /* csv header verification */
 
+#define NUM_FIELDS(a) (sizeof(a) / sizeof(*a))
+
 static int check_csv_header(struct fieldlist *f, const char **fields, int num)
 {
 	int i;
@@ -185,9 +205,68 @@ static int check_csv_header(struct fieldlist *f, const char **fields, int num)
 	return CFBSTATS_OK;
 }
 
-#define NUM_FIELDS(a) (sizeof(a) / sizeof(*a))
+static int check_csv_header_2(struct fieldlist *f,
+                              const struct field_handler *handlers,
+			      int num)
+{
+	int i;
+	const char *field;
+	const struct field_handler *handler = handlers;
+
+	assert(f->num_fields == num);
+
+	fieldlist_iter_begin(f);
+
+	for (i = 0; i < num; i++) {
+		field = fieldlist_iter_next(f);
+		if (handler->index == i) {
+			if (strcmp(field, handler->name) != 0) {
+				cfbstats_errno = CFBSTATS_EINVALIDFILE;
+				return CFBSTATS_ERROR;
+			}
+
+			handler++;
+			if (handler->type == FIELD_TYPE_END)
+				break;
+		}
+	}
+
+	return CFBSTATS_OK;
+}
 
 /* parse conference.csv */
+
+static const struct field_handler fh_conference[] = {
+	{
+		.index = 0,
+		.name = "Conference Code",
+		.type = FIELD_TYPE_ID,
+		.len = 0,
+		.offset = 0
+	},
+	{
+		.index = 1,
+		.name = "Name",
+		.type = FIELD_TYPE_STR,
+		.len = CONFERENCE_NAME_MAX,
+		.offset = offsetof(struct conference, name)
+
+	},
+	{
+		.index = 2,
+		.name = "Subdivision",
+		.type = FIELD_TYPE_CONFERENCE_ENUM,
+		.len = 0,
+		.offset = offsetof(struct conference, subdivision)
+	},
+	{
+		.index = INT_MIN,
+		.name = NULL,
+		.type = FIELD_TYPE_END,
+		.len = 0,
+		.offset = 0
+	}
+};
 
 static int parse_conference_csv(struct fieldlist *f)
 {
@@ -212,7 +291,9 @@ static int parse_conference_csv(struct fieldlist *f)
 
 	if (!processed_header) {
 		processed_header = true;
-		return check_csv_header(f, fields, NUM_CONFERENCE_FIELDS);
+		return check_csv_header_2(f,
+				fh_conference,
+				NUM_CONFERENCE_FIELDS);
 	}
 
 	conf = objectdb_create_conference();
