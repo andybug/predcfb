@@ -50,6 +50,7 @@ struct linehandler {
 	const struct fielddesc *descriptions;
 	const struct fielddesc *current;
 	struct fieldlist *flist;
+	void *obj;
 	int line;
 };
 
@@ -207,11 +208,11 @@ static int linehandler_get_ownid(struct linehandler *lh, int *id)
 	return CFBSTATS_OK;
 }
 
-static int linehandler_get_str(struct linehandler *lh, void *out)
+static int linehandler_get_str(struct linehandler *lh)
 {
 	const char *str;
 	const struct fielddesc *cur = lh->current;
-	char *outbuf = (char*) (((intptr_t) out) + cur->offset);
+	char *outbuf = (char*) (((intptr_t) lh->obj) + cur->offset);
 
 	if (fieldlist_str_at(lh->flist, cur->index, &str) != FIELDLIST_OK) {
 		/* FIXME */
@@ -219,6 +220,30 @@ static int linehandler_get_str(struct linehandler *lh, void *out)
 	}
 
 	strncpy(outbuf, str, cur->len);
+
+	return CFBSTATS_OK;
+}
+
+static int linehandler_get_conf_enum(struct linehandler *lh)
+{
+	const char *str;
+	const struct fielddesc *cur = lh->current;
+	size_t pval = ((intptr_t) lh->obj) + cur->offset;
+	enum conference_division *outdiv = (enum conference_division*) pval;
+
+	if (fieldlist_str_at(lh->flist, cur->index, &str) != FIELDLIST_OK) {
+		/* FIXME */
+		return CFBSTATS_ERROR;
+	}
+
+	if (strcmp("FBS", str) == 0) {
+		*outdiv = CONFERENCE_FBS;
+	} else if (strcmp("FCS", str) == 0) {
+		*outdiv = CONFERENCE_FCS;
+	} else {
+		fprintf(stderr, "%s: invalid value for conference division on line %d\n", progname, lh->line);
+		return CFBSTATS_ERROR;
+	}
 
 	return CFBSTATS_OK;
 }
@@ -235,9 +260,19 @@ static int linehandler_parse(struct linehandler *lh, int *id)
 			if (linehandler_get_ownid(lh, id) != CFBSTATS_OK)
 				return CFBSTATS_ERROR;
 			break;
+		
+		case FIELD_TYPE_STR:
+			if (linehandler_get_str(lh) != CFBSTATS_OK)
+				return CFBSTATS_ERROR;
+			break;
+
+		case FIELD_TYPE_CONFERENCE_ENUM:
+			if (linehandler_get_conf_enum(lh) != CFBSTATS_OK)
+				return CFBSTATS_ERROR;
+			break;
 		}
 
-		lh++;
+		lh->current++;
 	}
 
 	return CFBSTATS_OK;
@@ -332,30 +367,23 @@ static const struct fielddesc desc_conference[] = {
 
 static int parse_conference_csv(struct fieldlist *f)
 {
-	static const char *fields[] = {
-		"Conference Code",
-		"Name",
-		"Subdivision"
-	};
-	static const int NUM_CONFERENCE_FIELDS = NUM_FIELDS(fields);
-	static bool processed_header = false;
+	static const int num_fields = NUM_FIELDS(desc_conference) - 1;
+	static int line = 0;
 
+	struct linehandler handler;
 	struct conference *conf;
-	const char *str;
-	size_t len;
-	int id;
 	struct objectid oid;
+	int id;
 
-	if (f->num_fields != NUM_CONFERENCE_FIELDS) {
+	line++;
+
+	if (f->num_fields != num_fields) {
 		cfbstats_errno = CFBSTATS_EINVALIDFILE;
 		return CFBSTATS_ERROR;
 	}
 
-	if (!processed_header) {
-		processed_header = true;
-		return check_csv_header_2(f,
-				desc_conference,
-				NUM_CONFERENCE_FIELDS);
+	if (line == 1) {
+		return check_csv_header_2(f, desc_conference, num_fields);
 	}
 
 	conf = objectdb_create_conference();
@@ -366,26 +394,13 @@ static int parse_conference_csv(struct fieldlist *f)
 		return CFBSTATS_ERROR;
 	}
 
-	fieldlist_iter_begin(f);
+	handler.descriptions = desc_conference;
+	handler.flist = f;
+	handler.obj = conf;
+	handler.line = line;
 
-	/* id field */
-	if (fieldlist_iter_next_int(f, &id) != FIELDLIST_OK)
-		return CFBSTATS_ERROR;
-
-	/* conference name */
-	str = fieldlist_iter_next(f);
-	len = strlen(str);
-	if (len >= CONFERENCE_NAME_MAX)
-		return CFBSTATS_ERROR;
-	strncpy(conf->name, str, CONFERENCE_NAME_MAX);
-
-	/* subdivision */
-	str = fieldlist_iter_next(f);
-	if (strcmp("FBS", str) == 0)
-		conf->subdivision = CONFERENCE_FBS;
-	else if (strcmp("FCS", str) == 0)
-		conf->subdivision = CONFERENCE_FCS;
-	else
+	/* parse the fields */
+	if (linehandler_parse(&handler, &id) != CFBSTATS_OK)
 		return CFBSTATS_ERROR;
 
 	/* add the conference to the objectdb */
