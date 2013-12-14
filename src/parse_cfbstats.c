@@ -27,19 +27,30 @@ struct map_entry {
 
 enum field_type {
 	FIELD_TYPE_END,
-	FIELD_TYPE_ID,
+	FIELD_TYPE_OWNID,
+	FIELD_TYPE_OWNGAMEID,
+	FIELD_TYPE_CONFID,
+	FIELD_TYPE_TEAMID,
+	FIELD_TYPE_GAMEID,
 	FIELD_TYPE_STR,
 	FIELD_TYPE_SHORT,
 	/* special types */
 	FIELD_TYPE_CONFERENCE_ENUM
 };
 
-struct field_handler {
+struct fielddesc {
 	int index;
 	const char *name;
 	enum field_type type;
 	size_t len;
 	size_t offset;
+};
+
+struct linehandler {
+	const struct fielddesc *descriptions;
+	const struct fielddesc *current;
+	struct fieldlist *flist;
+	int line;
 };
 
 enum file_type {
@@ -181,6 +192,57 @@ static int pack_game_code(const char *str)
 	return id;
 }
 
+/* line handler functions */
+
+static int linehandler_get_ownid(struct linehandler *lh, int *id)
+{
+	int err;
+
+	err = fieldlist_int_at(lh->flist, lh->current->index, id);
+	if (err != FIELDLIST_OK) {
+		/* FIXME */
+		return CFBSTATS_ERROR;
+	}
+
+	return CFBSTATS_OK;
+}
+
+static int linehandler_get_str(struct linehandler *lh, void *out)
+{
+	const char *str;
+	const struct fielddesc *cur = lh->current;
+	char *outbuf = (char*) (((intptr_t) out) + cur->offset);
+
+	if (fieldlist_str_at(lh->flist, cur->index, &str) != FIELDLIST_OK) {
+		/* FIXME */
+		return CFBSTATS_ERROR;
+	}
+
+	strncpy(outbuf, str, cur->len);
+
+	return CFBSTATS_OK;
+}
+
+static int linehandler_parse(struct linehandler *lh, int *id)
+{
+	assert(lh->descriptions != NULL);
+
+	lh->current = lh->descriptions;
+
+	while (lh->current->type != FIELD_TYPE_END) {
+		switch (lh->current->type) {
+		case FIELD_TYPE_OWNID:
+			if (linehandler_get_ownid(lh, id) != CFBSTATS_OK)
+				return CFBSTATS_ERROR;
+			break;
+		}
+
+		lh++;
+	}
+
+	return CFBSTATS_OK;
+}
+
 /* csv header verification */
 
 #define NUM_FIELDS(a) (sizeof(a) / sizeof(*a))
@@ -206,12 +268,12 @@ static int check_csv_header(struct fieldlist *f, const char **fields, int num)
 }
 
 static int check_csv_header_2(struct fieldlist *f,
-                              const struct field_handler *handlers,
+                              const struct fielddesc *desc_list,
 			      int num)
 {
 	int i;
 	const char *field;
-	const struct field_handler *handler = handlers;
+	const struct fielddesc *desc = desc_list;
 
 	assert(f->num_fields == num);
 
@@ -219,14 +281,14 @@ static int check_csv_header_2(struct fieldlist *f,
 
 	for (i = 0; i < num; i++) {
 		field = fieldlist_iter_next(f);
-		if (handler->index == i) {
-			if (strcmp(field, handler->name) != 0) {
+		if (desc->index == i) {
+			if (strcmp(field, desc->name) != 0) {
 				cfbstats_errno = CFBSTATS_EINVALIDFILE;
 				return CFBSTATS_ERROR;
 			}
 
-			handler++;
-			if (handler->type == FIELD_TYPE_END)
+			desc++;
+			if (desc->type == FIELD_TYPE_END)
 				break;
 		}
 	}
@@ -236,11 +298,11 @@ static int check_csv_header_2(struct fieldlist *f,
 
 /* parse conference.csv */
 
-static const struct field_handler fh_conference[] = {
+static const struct fielddesc desc_conference[] = {
 	{
 		.index = 0,
 		.name = "Conference Code",
-		.type = FIELD_TYPE_ID,
+		.type = FIELD_TYPE_OWNID,
 		.len = 0,
 		.offset = 0
 	},
@@ -292,7 +354,7 @@ static int parse_conference_csv(struct fieldlist *f)
 	if (!processed_header) {
 		processed_header = true;
 		return check_csv_header_2(f,
-				fh_conference,
+				desc_conference,
 				NUM_CONFERENCE_FIELDS);
 	}
 
