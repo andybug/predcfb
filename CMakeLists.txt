@@ -50,4 +50,4 @@ ADD_SUBDIRECTORY(src)
 
 ## --- build tests ---
 
-ADD_SUBDIRECTORY(test)
+ADD_SUBDIRECTORY(tests)

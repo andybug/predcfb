@@ -1,4 +1,4 @@
-PROJECT(test_predcfb)
+PROJECT(predcfb_test)
 
 ENABLE_TESTING()
 
@@ -12,18 +12,18 @@ ADD_SUBDIRECTORY(gtest)
 # --- build test_predcfb ---
 
 ADD_EXECUTABLE(
-	test_predcfb
+	predcfb_test
 	# --- sources ---
-	fieldlist_test.cc
-	objectdb_test.cc
-	objectid_test.cc
-	zipfile_test.cc
+	fieldlist.cc
+	objectdb.cc
+	objectid.cc
+	zipfile.cc
 	# --- predcfb objects ---
 	$<TARGET_OBJECTS:libpredcfb>
 )
 
 TARGET_LINK_LIBRARIES(
-	test_predcfb
+	predcfb_test
 	# --- static libraries ---
 	libcsv
 	miniunz
@@ -40,6 +40,6 @@ TARGET_LINK_LIBRARIES(
 # --- add the test target ---
 
 ADD_TEST(
-	NAME test_predcfb
-	COMMAND test_predcfb
+	NAME predcfb_test
+	COMMAND predcfb_test
 )

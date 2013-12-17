@@ -18,7 +18,7 @@ namespace {
 
 	void ZipFileTest::SetUp()
 	{
-		zf = zipfile_open_archive("test/data/good.zip");
+		zf = zipfile_open_archive("tests/data/good.zip");
 		EXPECT_NE((zf_readctx*) NULL, zf);
 
 		enum zipfile_err err = zipfile_get_error(zf);
@@ -52,7 +52,7 @@ namespace {
 	TEST(ZipFileTestNoFixture, OpenArchive) {
 		zf_readctx *zf;
 
-		zf = zipfile_open_archive("test/data/good.zip");
+		zf = zipfile_open_archive("tests/data/good.zip");
 		EXPECT_NE((zf_readctx*) NULL, zf);
 
 		enum zipfile_err err = zipfile_get_error(zf);
@@ -62,7 +62,7 @@ namespace {
 	TEST(ZipFileTestNoFixture, OpenBadArchive) {
 		zf_readctx *zf;
 
-		zf = zipfile_open_archive("test/data/notazipfile.zip");
+		zf = zipfile_open_archive("tests/data/notazipfile.zip");
 		EXPECT_NE((zf_readctx*) NULL, zf);
 
 		enum zipfile_err err = zipfile_get_error(zf);
