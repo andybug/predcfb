@@ -34,8 +34,11 @@ enum field_type {
 	FIELD_TYPE_GAMEID,
 	FIELD_TYPE_STR,
 	FIELD_TYPE_SHORT,
+	FIELD_TYPE_DATE,
 	/* special types */
-	FIELD_TYPE_CONFERENCE_ENUM
+	FIELD_TYPE_IGNORE,
+	FIELD_TYPE_CONFERENCE_ENUM,
+	FIELD_TYPE_SITE_BOOL
 };
 
 struct fielddesc {
@@ -208,6 +211,22 @@ static int linehandler_get_ownid(struct linehandler *lh, int *id)
 	return CFBSTATS_OK;
 }
 
+static int linehandler_get_owngameid(struct linehandler *lh, int *id)
+{
+	int err;
+	const char *str;
+
+	err = fieldlist_str_at(lh->flist, lh->current->index, &str);
+	if (err != FIELDLIST_OK) {
+		/* FIXME */
+		return CFBSTATS_ERROR;
+	}
+
+	*id = pack_game_code(str);
+
+	return CFBSTATS_OK;
+}
+
 static int linehandler_get_str(struct linehandler *lh)
 {
 	const char *str;
@@ -248,6 +267,31 @@ static int linehandler_get_conf_enum(struct linehandler *lh)
 	return CFBSTATS_OK;
 }
 
+static int linehandler_get_site_bool(struct linehandler *lh)
+{
+	const char *str;
+	const struct fielddesc *cur = lh->current;
+	size_t pbool = ((intptr_t) lh->obj) + cur->offset;
+	bool *outbool = (bool*) pbool;
+
+	if (fieldlist_str_at(lh->flist, cur->index, &str) != FIELDLIST_OK) {
+		/* FIXME */
+		return CFBSTATS_ERROR;
+	}
+
+	if (strcmp(str, "TEAM") == 0) {
+		*outbool = false;
+	} else if (strcmp(str, "NEUTRAL") == 0) {
+		*outbool = true;
+	} else {
+		cfbstats_errno = CFBSTATS_EINVALIDFILE;
+		fprintf(stderr, "%s: invalid value for game site (line %d)\n", progname, lh->line);
+		return CFBSTATS_ERROR;
+	}
+
+	return CFBSTATS_OK;
+}
+
 static int linehandler_get_confid(struct linehandler *lh)
 {
 	const struct fielddesc *cur = lh->current;
@@ -271,6 +315,81 @@ static int linehandler_get_confid(struct linehandler *lh)
 	return CFBSTATS_OK;
 }
 
+static int linehandler_get_teamid(struct linehandler *lh)
+{
+	const struct fielddesc *cur = lh->current;
+	int id;
+	const struct objectid *oid;
+	size_t poid = ((intptr_t) lh->obj) + cur->offset;
+	struct objectid *outoid = (struct objectid*) poid;
+
+	if (fieldlist_int_at(lh->flist, cur->index, &id) != FIELDLIST_OK) {
+		/* FIXME */
+		return CFBSTATS_ERROR;
+	}
+
+	if ((oid = id_map_lookup(id)) == NULL) {
+		fprintf(stderr, "%s: team id does not exist (line %d)\n", progname, lh->line);
+		return CFBSTATS_ERROR;
+	}
+
+	*outoid = *oid;
+
+	return CFBSTATS_OK;
+}
+
+static int linehandler_get_gameid(struct linehandler *lh)
+{
+	const struct fielddesc *cur = lh->current;
+	int id;
+	const struct objectid *oid;
+	size_t poid = ((intptr_t) lh->obj) + cur->offset;
+	struct objectid *outoid = (struct objectid*) poid;
+
+	if (fieldlist_int_at(lh->flist, cur->index, &id) != FIELDLIST_OK) {
+		/* FIXME */
+		return CFBSTATS_ERROR;
+	}
+
+	if ((oid = id_map_lookup(id)) == NULL) {
+		fprintf(stderr, "%s: game id does not exist (line %d)\n", progname, lh->line);
+		return CFBSTATS_ERROR;
+	}
+
+	*outoid = *oid;
+
+	return CFBSTATS_OK;
+}
+
+static int linehandler_get_date(struct linehandler *lh)
+{
+	/* dates are MM/DD/YYYY HH:MM:SS -ZZZZ */
+	static const int DATE_BUF_SIZE = 26;
+	const char *str;
+	const struct fielddesc *cur = lh->current;
+	size_t ptime = ((intptr_t) lh->obj) + cur->offset;
+	time_t *outtime = (time_t*) ptime;
+	char date_buf[DATE_BUF_SIZE];
+	struct tm tm;
+	const char *lastchar;
+
+	if (fieldlist_str_at(lh->flist, cur->index, &str) != FIELDLIST_OK) {
+		/* FIXME */
+		return CFBSTATS_ERROR;
+	}
+
+	snprintf(date_buf, DATE_BUF_SIZE, "%s 00:00:00 +0000", str);
+	lastchar = strptime(date_buf, "%m/%d/%Y %H:%M:%S %z", &tm);
+	if (!lastchar || *lastchar != '\0') {
+		cfbstats_errno = CFBSTATS_EINVALIDFILE;
+		return CFBSTATS_ERROR;
+	}
+
+	*outtime = mktime(&tm);
+
+	return CFBSTATS_OK;
+}
+
 static int linehandler_parse(struct linehandler *lh, int *id)
 {
 	assert(lh->descriptions != NULL);
@@ -283,9 +402,19 @@ static int linehandler_parse(struct linehandler *lh, int *id)
 			if (linehandler_get_ownid(lh, id) != CFBSTATS_OK)
 				return CFBSTATS_ERROR;
 			break;
+
+		case FIELD_TYPE_OWNGAMEID:
+			if (linehandler_get_owngameid(lh, id) != CFBSTATS_OK)
+				return CFBSTATS_ERROR;
+			break;
 		
 		case FIELD_TYPE_STR:
 			if (linehandler_get_str(lh) != CFBSTATS_OK)
+				return CFBSTATS_ERROR;
+			break;
+
+		case FIELD_TYPE_DATE:
+			if (linehandler_get_date(lh) != CFBSTATS_OK)
 				return CFBSTATS_ERROR;
 			break;
 
@@ -297,6 +426,24 @@ static int linehandler_parse(struct linehandler *lh, int *id)
 		case FIELD_TYPE_CONFID:
 			if (linehandler_get_confid(lh) != CFBSTATS_OK)
 				return CFBSTATS_ERROR;
+			break;
+
+		case FIELD_TYPE_TEAMID:
+			if (linehandler_get_teamid(lh) != CFBSTATS_OK)
+				return CFBSTATS_ERROR;
+			break;
+
+		case FIELD_TYPE_GAMEID:
+			if (linehandler_get_gameid(lh) != CFBSTATS_OK)
+				return CFBSTATS_ERROR;
+			break;
+
+		case FIELD_TYPE_SITE_BOOL:
+			if (linehandler_get_site_bool(lh) != CFBSTATS_OK)
+				return CFBSTATS_ERROR;
+			break;
+
+		case FIELD_TYPE_IGNORE:
 			break;
 		}
 
@@ -523,38 +670,77 @@ static int parse_team_csv(struct fieldlist *f)
 
 /* parse game.csv */
 
+static const struct fielddesc desc_game[] = {
+	{
+		.index = 0,
+		.name = "Game Code",
+		.type = FIELD_TYPE_OWNGAMEID,
+		.len = 0,
+		.offset = 0
+	},
+	{
+		.index = 1,
+		.name = "Date",
+		.type = FIELD_TYPE_DATE,
+		.len = 0,
+		.offset = offsetof(struct game, date)
+	},
+	{
+		.index = 2,
+		.name = "Visit Team Code",
+		.type = FIELD_TYPE_TEAMID,
+		.len = 0,
+		.offset = offsetof(struct game, away_oid)
+	},
+	{
+		.index = 3,
+		.name = "Home Team Code",
+		.type = FIELD_TYPE_TEAMID,
+		.len = 0,
+		.offset = offsetof(struct game, home_oid)
+	},
+	{
+		.index = 4,
+		.name = "Stadium Code",
+		.type = FIELD_TYPE_IGNORE,
+		.len = 0,
+		.offset = 0
+	},
+	{
+		.index = 5,
+		.name = "Site",
+		.type = FIELD_TYPE_SITE_BOOL,
+		.len = 0,
+		.offset = offsetof(struct game, neutral)
+	},
+	{
+		.index = INT_MIN,
+		.name = NULL,
+		.type = FIELD_TYPE_END,
+		.len = 0,
+		.offset = 0
+	}
+};
+
 static int parse_game_csv(struct fieldlist *f)
 {
-	static const char *fields[] = {
-		"Game Code",
-		"Date",
-		"Visit Team Code",
-		"Home Team Code",
-		"Stadium Code",
-		"Site"
-	};
-	static const int NUM_GAME_FIELDS = NUM_FIELDS(fields);
-	/* dates are MM/DD/YYYY HH:MM:SS -ZZZZ */
-	static const int DATE_BUF_SIZE = 26;
-	static bool processed_header = false;
+	static const int num_fields = NUM_FIELDS(desc_game) - 1;
+	static int line = 0;
 
+	struct linehandler handler;
+	struct objectid oid;
+	int id;
 	struct game *game;
-	struct tm tm;
-	const char *str, *lastchar;
-	const struct objectid *oid;
-	struct objectid game_oid;
-	char date_buf[DATE_BUF_SIZE];
-	int game_id;
-	int team_id;
 
-	if (f->num_fields != NUM_GAME_FIELDS) {
+	line++;
+
+	if (f->num_fields != num_fields) {
 		cfbstats_errno = CFBSTATS_EINVALIDFILE;
 		return CFBSTATS_ERROR;
 	}
 
-	if (!processed_header) {
-		processed_header = true;
-		return check_csv_header(f, fields, NUM_GAME_FIELDS);
+	if (line == 1) {
+		return check_csv_header_2(f, desc_game, num_fields);
 	}
 
 	if ((game = objectdb_create_game()) == NULL) {
@@ -562,68 +748,21 @@ static int parse_game_csv(struct fieldlist *f)
 		return CFBSTATS_ERROR;
 	}
 
-	fieldlist_iter_begin(f);
+	handler.descriptions = desc_game;
+	handler.flist = f;
+	handler.obj = game;
+	handler.line = line;
 
-	/* game code */
-	str = fieldlist_iter_next(f);
-	game_id = pack_game_code(str);
-
-	/* date in the format 08/29/2013 */
-	str = fieldlist_iter_next(f);
-	snprintf(date_buf, DATE_BUF_SIZE, "%s 00:00:00 +0000", str);
-	lastchar = strptime(date_buf, "%m/%d/%Y %H:%M:%S %z", &tm);
-	if (!lastchar || *lastchar != '\0') {
-		cfbstats_errno = CFBSTATS_EINVALIDFILE;
+	/* parse the fields */
+	if (linehandler_parse(&handler, &id) != CFBSTATS_OK)
 		return CFBSTATS_ERROR;
-	}
-	game->date = mktime(&tm);
-
-	/* visiting team */
-	if (fieldlist_iter_next_int(f, &team_id) != FIELDLIST_OK) {
-		cfbstats_errno = CFBSTATS_EINVALIDFILE;
-		return CFBSTATS_ERROR;
-	}
-
-	/* get the away team's oid from the id */
-	if ((oid = id_map_lookup(team_id)) == NULL) {
-		cfbstats_errno = CFBSTATS_EIDLOOKUP;
-		return CFBSTATS_ERROR;
-	}
-	game->away_oid = *oid;
-
-	/* home team */
-	if (fieldlist_iter_next_int(f, &team_id) != FIELDLIST_OK) {
-		cfbstats_errno = CFBSTATS_EINVALIDFILE;
-		return CFBSTATS_ERROR;
-	}
-
-	/* get the home team's oid from the id */
-	if ((oid = id_map_lookup(team_id)) == NULL) {
-		cfbstats_errno = CFBSTATS_EIDLOOKUP;
-		return CFBSTATS_ERROR;
-	}
-	game->home_oid = *oid;
-
-	/* ignore stadium code */
-	str = fieldlist_iter_next(f);
-
-	/* site */
-	str = fieldlist_iter_next(f);
-	if (strcmp(str, "TEAM") == 0) {
-		game->neutral = false;
-	} else if (strcmp(str, "NEUTRAL") == 0) {
-		game->neutral = true;
-	} else {
-		cfbstats_errno = CFBSTATS_EINVALIDFILE;
-		return CFBSTATS_ERROR;
-	}
 
 	/* add the game to the db */
-	if (objectdb_add_game(game, &game_oid) != OBJECTDB_OK)
+	if (objectdb_add_game(game, &oid) != OBJECTDB_OK)
 		return CFBSTATS_ERROR;
 
 	/* finally, add the id to the id map */
-	if (id_map_insert(game_id, &game_oid) != CFBSTATS_OK)
+	if (id_map_insert(id, &oid) != CFBSTATS_OK)
 		return CFBSTATS_ERROR;
 
 	return CFBSTATS_OK;
