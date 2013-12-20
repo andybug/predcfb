@@ -8,6 +8,7 @@ ADD_LIBRARY(
 	# --- sources ---
 	cfbstats/fielddesc.c
 	cfbstats/id_map.c
+	cfbstats/linehandler.c
 	cfbstats/unzip.c
 	csvparse.c
 	fieldlist.c

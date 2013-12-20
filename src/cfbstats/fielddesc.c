@@ -117,7 +117,7 @@ const struct fielddesc fdesc_game[] = {
 };
 
 /* constants */
-#define NUM_FDESC(a) (sizeof(a) / sizeof(*a))
+#define NUM_FDESC(a) ((sizeof(a) / sizeof(*a)) - 1)
 
 const int num_fdesc_conference = NUM_FDESC(fdesc_conference);
 const int total_fields_conference = 3;

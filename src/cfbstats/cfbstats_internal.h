@@ -57,4 +57,14 @@ extern const struct fielddesc fdesc_game[];
 extern const int num_fdesc_game;
 extern const int total_fields_game;
 
+/* linehandler */
+struct linehandler {
+	const struct fielddesc *descriptions;
+	const struct fielddesc *current;
+	struct fieldlist *flist;
+	void *obj;
+};
+
+extern int linehandler_parse(struct linehandler *lh, int *id);
+
 #endif
