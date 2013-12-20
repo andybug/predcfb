@@ -91,6 +91,40 @@ static int zipfile_check_access(zf_readctx *z, const char *path)
 	return ZIPFILE_OK;
 }
 
+int zipfile_check_format(const char *path)
+{
+	const size_t ZIPFILE_SIG_LEN = 4;
+	const char zipfile_sig[2] = { 0x50, 0x4b };
+	const char zipfile_ver1[2] = { 0x03, 0x04 };
+	const char zipfile_ver2[2] = { 0x05, 0x06 };
+	const char zipfile_ver3[2] = { 0x07, 0x08 };
+	char buf[ZIPFILE_SIG_LEN];
+	FILE *file;
+	int err = ZIPFILE_ERROR;
+
+	file = fopen(path, "rb");
+	if (!file)
+		return ZIPFILE_ERROR;
+
+	fread(buf, 1, ZIPFILE_SIG_LEN, file);
+
+	if (buf[0] == zipfile_sig[0] && buf[1] == zipfile_sig[1]) {
+		if (buf[2] == zipfile_ver1[0] &&
+				buf[3] == zipfile_ver1[1]) {
+			err = ZIPFILE_OK;
+		} else if (buf[2] == zipfile_ver2[0]
+				&& buf[3] == zipfile_ver2[1]) {
+			err = ZIPFILE_OK;
+		} else if (buf[2] == zipfile_ver3[0]
+				&& buf[3] == zipfile_ver3[1]) {
+			err = ZIPFILE_OK;
+		}
+	}
+
+	fclose(file);
+	return err;
+}
+
 zf_readctx *zipfile_open_archive(const char *path)
 {
 	zf_readctx *z;

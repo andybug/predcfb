@@ -6,6 +6,7 @@
 #include <predcfb/options.h>
 #include <predcfb/cfbstats.h>
 #include <predcfb/objectdb.h>
+#include <predcfb/zipfile.h>
 
 static void print_help(void)
 {
@@ -40,8 +41,13 @@ int main(int argc, char **argv)
 	if (opt_version)
 		print_version();
 
-	if (cfbstats_read_zipfile(opt_archive) != CFBSTATS_OK)
+	if (zipfile_check_format(opt_archive) == ZIPFILE_OK) {
+		if (cfbstats_read_zipfile(opt_archive) != CFBSTATS_OK)
+			exit(EXIT_FAILURE);
+	} else {
+		fprintf(stderr, "%s: expected zip file\n", progname);
 		exit(EXIT_FAILURE);
+	}
 
 	if (opt_save && (objectdb_save() != OBJECTDB_OK))
 		exit(EXIT_FAILURE);
