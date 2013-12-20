@@ -129,12 +129,12 @@ int csvp_parse(csvp_ctx *c, char *buf, size_t len)
 	return CSVP_OK;
 }
 
-const char *csvp_strerror(csvp_ctx *c)
+const char *csvp_strerror(const csvp_ctx *c)
 {
 	return csvparse_errors[c->error];
 }
 
-enum csvp_error csvp_error(csvp_ctx *c)
+enum csvp_error csvp_error(const csvp_ctx *c)
 {
 	return c->error;
 }

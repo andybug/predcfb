@@ -1,24 +1,67 @@
 
 #include <stdio.h>
 
+#include <predcfb/cfbstats.h>
 #include <predcfb/zipfile.h>
 #include <predcfb/csvparse.h>
+#include <predcfb/objectdb.h> /* FIXME */
 
 #include "cfbstats_internal.h"
 
+extern const char *progname;
 
-static void handle_zipfile_error(zf_readctx *zf, const char *func)
+enum file_type {
+	CFBSTATS_FILE_NONE,
+	CFBSTATS_FILE_CSV
+};
+
+struct file_handler {
+	const char *file;
+	enum file_type type;
+	int (*parsing_func)(struct fieldlist *);
+};
+
+static const struct file_handler file_handlers[] = {
+	{ "conference.csv", CFBSTATS_FILE_CSV, parse_conference_csv },
+	{ "team.csv", CFBSTATS_FILE_CSV, parse_team_csv },
+	{ "game.csv", CFBSTATS_FILE_CSV, parse_game_csv },
+	{ "team-game-statistics.csv", CFBSTATS_FILE_CSV, parse_stats_csv },
+	{ NULL, CFBSTATS_FILE_NONE, NULL }
+};
+
+static void handle_zipfile_error(const zf_readctx *zf)
 {
 	const char *err;
 
 	err = zipfile_strerr(zf);
-	fprintf(stderr, "%s: %s\n", func, err);
+	fprintf(stderr, "%s: %s\n", progname, err);
 
 	cfbstats_errno = CFBSTATS_EZIPFILE;
 }
 
-static int read_csv_file_from_zipfile(zf_readctx *zf,
-                                      const struct file_handler *handler)
+static void handle_csvparse_error(
+		const csvp_ctx *csvp,
+		const struct file_handler *handler)
+{
+	const char *err;
+
+	if (csvp_error(csvp) == CSVP_EPARSE) {
+		/*
+		 * if it is a parsing error, then check our
+		 * own error code since the error originated
+		 * here
+		 */
+		err = cfbstats_strerror();
+		fprintf(stderr, "%s: %s in %s\n",
+			progname, err, handler->file);
+	}
+
+	err = csvp_strerror(csvp);
+	fprintf(stderr, "%s: %s in %s\n",
+		progname, err, handler->file);
+}
+
+static int read_csv_file(zf_readctx *zf, const struct file_handler *handler)
 {
 	static const int CSV_BUF_SIZE = 4096;
 	char buf[CSV_BUF_SIZE];
@@ -26,7 +69,7 @@ static int read_csv_file_from_zipfile(zf_readctx *zf,
 	csvp_ctx *csvp;
 
 	if (zipfile_open_file(zf, handler->file) != ZIPFILE_OK) {
-		handle_zipfile_error(zf, __func__);
+		handle_zipfile_error(zf);
 		return CFBSTATS_ERROR;
 	}
 
@@ -44,35 +87,18 @@ static int read_csv_file_from_zipfile(zf_readctx *zf,
 			break;
 
 		if (csvp_parse(csvp, buf, bytes) != CSVP_OK) {
-			const char *err;
-
-			if (csvp_error(csvp) == CSVP_EPARSE) {
-				/*
-				 * if it is a parsing error, then check our
-				 * own error code since the error originated
-				 * here
-				 */
-				err = cfbstats_strerror();
-				fprintf(stderr, "%s: %s\n", progname, err);
-			}
-
-			err = csvp_strerror(csvp);
-			fprintf(stderr, "%s: %s in %s\n",
-			        progname, err, handler->file);
-
+			handle_csvparse_error(csvp, handler);
 			return CFBSTATS_ERROR;
 		}
 	}
 
 	if (csvp_destroy(csvp) != CSVP_OK) {
-		const char *err = csvp_strerror(csvp);
-		fprintf(stderr, "%s: %s in %s\n",
-		        progname, err, handler->file);
+		handle_csvparse_error(csvp, handler);
 		return CFBSTATS_ERROR;
 	}
 
 	if (zipfile_close_file(zf) != ZIPFILE_OK) {
-		handle_zipfile_error(zf, __func__);
+		handle_zipfile_error(zf);
 		return CFBSTATS_ERROR;
 	}
 
@@ -86,7 +112,7 @@ static int read_files_from_zipfile(zf_readctx *zf)
 	while (handler->type != CFBSTATS_FILE_NONE) {
 		switch (handler->type) {
 		case CFBSTATS_FILE_CSV:
-			if (read_csv_file_from_zipfile(zf, handler) != CFBSTATS_OK)
+			if (read_csv_file(zf, handler) != CFBSTATS_OK)
 				return CFBSTATS_ERROR;
 			break;
 
@@ -115,7 +141,7 @@ int cfbstats_read_zipfile(const char *path)
 		cfbstats_errno = CFBSTATS_ENOMEM;
 		return CFBSTATS_ERROR;
 	} else if (zipfile_get_error(zf) != ZIPFILE_ENONE) {
-		handle_zipfile_error(zf, __func__);
+		handle_zipfile_error(zf);
 		return CFBSTATS_ERROR;
 	}
 
@@ -123,13 +149,14 @@ int cfbstats_read_zipfile(const char *path)
 		return CFBSTATS_ERROR;
 
 	if (zipfile_close_archive(zf) != ZIPFILE_OK) {
-		handle_zipfile_error(zf, __func__);
+		handle_zipfile_error(zf);
 		return CFBSTATS_ERROR;
 	}
 
 	/*
 	 * finish up by setting all of the pointers in the data
 	 * from the object ids
+	 * FIXME - this isn't necessary
 	 */
 	if (objectdb_link() != OBJECTDB_OK)
 		return CFBSTATS_ERROR;

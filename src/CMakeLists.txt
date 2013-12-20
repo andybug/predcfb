@@ -6,6 +6,7 @@ ADD_LIBRARY(
 	libpredcfb
 	OBJECT
 	# --- sources ---
+	cfbstats/unzip.c
 	csvparse.c
 	fieldlist.c
 	objectdb.c

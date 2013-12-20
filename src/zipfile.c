@@ -23,7 +23,7 @@ struct zipfile_read_context {
 
 /* error functions */
 
-const char *zipfile_strerr(zf_readctx *z)
+const char *zipfile_strerr(const zf_readctx *z)
 {
 	(void) z;
 	return "FIXME: generic zipfile error";

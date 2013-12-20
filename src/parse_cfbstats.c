@@ -56,36 +56,7 @@ struct linehandler {
 	int line;
 };
 
-enum file_type {
-	CFBSTATS_FILE_NONE,
-	CFBSTATS_FILE_CSV
-};
-
-struct file_handler {
-	const char *file;
-	enum file_type type;
-	int (*parsing_func)(struct fieldlist *);
-};
-
-/* prototypes for the handlers */
-static int parse_conference_csv(struct fieldlist *);
-static int parse_team_csv(struct fieldlist *);
-static int parse_game_csv(struct fieldlist *);
-static int parse_stats_csv(struct fieldlist *);
-
-static const struct file_handler file_handlers[] = {
-	{ "conference.csv", CFBSTATS_FILE_CSV, parse_conference_csv },
-	{ "team.csv", CFBSTATS_FILE_CSV, parse_team_csv },
-	{ "game.csv", CFBSTATS_FILE_CSV, parse_game_csv },
-	{ "team-game-statistics.csv", CFBSTATS_FILE_CSV, parse_stats_csv },
-	{ NULL, CFBSTATS_FILE_NONE, NULL }
-};
-
 static struct map_entry id_map[CFBSTATS_ID_MAP_SIZE];
-
-/* subtract 1 from total to account for ending null struct */
-static const int num_file_handlers = (sizeof(file_handlers) /
-                                      sizeof(struct file_handler)) - 1;
 
 enum cfbstats_err cfbstats_errno = CFBSTATS_ENONE;
 static const char *cfbstats_errors[] = {
@@ -100,7 +71,7 @@ static const char *cfbstats_errors[] = {
 
 /* initialization functions */
 
-static void cfbstats_init(void)
+void cfbstats_init(void)
 {
 	/* make sure that the id map size is a power of 2 */
 	assert(!(CFBSTATS_ID_MAP_SIZE & (CFBSTATS_ID_MAP_SIZE - 1)));
@@ -533,7 +504,7 @@ static const struct fielddesc desc_conference[] = {
 	}
 };
 
-static int parse_conference_csv(struct fieldlist *f)
+int parse_conference_csv(struct fieldlist *f)
 {
 	static const int num_fields = NUM_FIELDS(desc_conference) - 1;
 	static int line = 0;
@@ -615,7 +586,7 @@ static const struct fielddesc desc_team[] = {
 	}
 };
 
-static int parse_team_csv(struct fieldlist *f)
+int parse_team_csv(struct fieldlist *f)
 {
 	static const int num_fields = NUM_FIELDS(desc_team) - 1;
 	static int line = 0;
@@ -708,7 +679,7 @@ static const struct fielddesc desc_game[] = {
 	}
 };
 
-static int parse_game_csv(struct fieldlist *f)
+int parse_game_csv(struct fieldlist *f)
 {
 	static const int parse_fields = NUM_FIELDS(desc_game) - 1;
 	static const int num_fields = 6;
