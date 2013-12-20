@@ -45,6 +45,10 @@ void cfbstats_init(void)
 	/* make sure that the id map size is a power of 2 */
 	assert(!(CFBSTATS_ID_MAP_SIZE & (CFBSTATS_ID_MAP_SIZE - 1)));
 
+	assert(num_fdesc_conference <= total_fields_conference);
+	assert(num_fdesc_team <= total_fields_team);
+	assert(num_fdesc_game <= total_fields_game);
+
 	id_map_clear();
 }
 
