@@ -20,29 +20,6 @@
 
 extern const char *progname;
 
-enum field_type {
-	FIELD_TYPE_END,
-	FIELD_TYPE_OWNID,
-	FIELD_TYPE_OWNGAMEID,
-	FIELD_TYPE_CONFID,
-	FIELD_TYPE_TEAMID,
-	FIELD_TYPE_GAMEID,
-	FIELD_TYPE_STR,
-	FIELD_TYPE_SHORT,
-	FIELD_TYPE_DATE,
-	/* special types */
-	FIELD_TYPE_CONFERENCE_ENUM,
-	FIELD_TYPE_SITE_BOOL
-};
-
-struct fielddesc {
-	int index;
-	const char *name;
-	enum field_type type;
-	size_t len;
-	size_t offset;
-};
-
 struct linehandler {
 	const struct fielddesc *descriptions;
 	const struct fielddesc *current;
@@ -349,20 +326,14 @@ static int check_csv_header(struct fieldlist *f, const char **fields, int num)
 	return CFBSTATS_OK;
 }
 
-static int check_csv_header_2(struct fieldlist *f,
-                              const struct fielddesc *desc_list,
-			      int num)
+static int check_csv_header_2(
+		struct fieldlist *f,
+		const struct fielddesc *desc_list)
 {
-	int i;
 	const char *field;
-	const struct fielddesc *desc;
+	const struct fielddesc *desc = desc_list;
 
-	for (i = 0; i < num; i++) {
-		desc = &desc_list[i];
-
-		if (desc->type == FIELD_TYPE_END)
-			break;
-
+	while (desc->type != FIELD_TYPE_END) {
 		if (fieldlist_str_at(f, desc->index, &field) != FIELDLIST_OK)
 			return CFBSTATS_ERROR;
 
@@ -370,6 +341,8 @@ static int check_csv_header_2(struct fieldlist *f,
 			cfbstats_errno = CFBSTATS_EINVALIDFILE;
 			return CFBSTATS_ERROR;
 		}
+
+		desc++;
 	}
 
 	return CFBSTATS_OK;
@@ -377,54 +350,20 @@ static int check_csv_header_2(struct fieldlist *f,
 
 /* parse conference.csv */
 
-static const struct fielddesc desc_conference[] = {
-	{
-		.index = 0,
-		.name = "Conference Code",
-		.type = FIELD_TYPE_OWNID,
-		.len = 0,
-		.offset = 0
-	},
-	{
-		.index = 1,
-		.name = "Name",
-		.type = FIELD_TYPE_STR,
-		.len = CONFERENCE_NAME_MAX,
-		.offset = offsetof(struct conference, name)
-
-	},
-	{
-		.index = 2,
-		.name = "Subdivision",
-		.type = FIELD_TYPE_CONFERENCE_ENUM,
-		.len = 0,
-		.offset = offsetof(struct conference, subdivision)
-	},
-	{
-		.index = INT_MIN,
-		.name = NULL,
-		.type = FIELD_TYPE_END,
-		.len = 0,
-		.offset = 0
-	}
-};
-
 int parse_conference_csv(struct fieldlist *f)
 {
-	static const int num_fields = NUM_FIELDS(desc_conference) - 1;
-
 	struct linehandler handler;
 	struct conference *conf;
 	struct objectid oid;
 	int id;
 
-	if (f->num_fields != num_fields) {
+	if (f->num_fields != total_fields_conference) {
 		cfbstats_errno = CFBSTATS_EINVALIDFILE;
 		return CFBSTATS_ERROR;
 	}
 
 	if (f->line == 1) {
-		return check_csv_header_2(f, desc_conference, num_fields);
+		return check_csv_header_2(f, fdesc_conference);
 	}
 
 	conf = objectdb_create_conference();
@@ -435,7 +374,7 @@ int parse_conference_csv(struct fieldlist *f)
 		return CFBSTATS_ERROR;
 	}
 
-	handler.descriptions = desc_conference;
+	handler.descriptions = fdesc_conference;
 	handler.flist = f;
 	handler.obj = conf;
 
@@ -456,53 +395,20 @@ int parse_conference_csv(struct fieldlist *f)
 
 /* parse team.csv */
 
-static const struct fielddesc desc_team[] = {
-	{
-		.index = 0,
-		.name = "Team Code",
-		.type = FIELD_TYPE_OWNID,
-		.len = 0,
-		.offset = 0
-	},
-	{
-		.index = 1,
-		.name = "Name",
-		.type = FIELD_TYPE_STR,
-		.len = TEAM_NAME_MAX,
-		.offset = offsetof(struct team, name)
-	},
-	{
-		.index = 2,
-		.name = "Conference Code",
-		.type = FIELD_TYPE_CONFID,
-		.len = 0,
-		.offset = offsetof(struct team, conf_oid)
-	},
-	{
-		.index = INT_MIN,
-		.name = NULL,
-		.type = FIELD_TYPE_END,
-		.len = 0,
-		.offset = 0
-	}
-};
-
 int parse_team_csv(struct fieldlist *f)
 {
-	static const int num_fields = NUM_FIELDS(desc_team) - 1;
-
 	struct linehandler handler;
 	struct objectid oid;
 	int id;
 	struct team *team;
 
-	if (f->num_fields != num_fields) {
+	if (f->num_fields != total_fields_team) {
 		cfbstats_errno = CFBSTATS_EINVALIDFILE;
 		return CFBSTATS_ERROR;
 	}
 
 	if (f->line == 1) {
-		return check_csv_header_2(f, desc_team, num_fields);
+		return check_csv_header_2(f, fdesc_team);
 	}
 
 	if ((team = objectdb_create_team()) == NULL) {
@@ -510,7 +416,7 @@ int parse_team_csv(struct fieldlist *f)
 		return CFBSTATS_ERROR;
 	}
 
-	handler.descriptions = desc_team;
+	handler.descriptions = fdesc_team;
 	handler.flist = f;
 	handler.obj = team;
 
@@ -531,68 +437,20 @@ int parse_team_csv(struct fieldlist *f)
 
 /* parse game.csv */
 
-static const struct fielddesc desc_game[] = {
-	{
-		.index = 0,
-		.name = "Game Code",
-		.type = FIELD_TYPE_OWNGAMEID,
-		.len = 0,
-		.offset = 0
-	},
-	{
-		.index = 1,
-		.name = "Date",
-		.type = FIELD_TYPE_DATE,
-		.len = 0,
-		.offset = offsetof(struct game, date)
-	},
-	{
-		.index = 2,
-		.name = "Visit Team Code",
-		.type = FIELD_TYPE_TEAMID,
-		.len = 0,
-		.offset = offsetof(struct game, away_oid)
-	},
-	{
-		.index = 3,
-		.name = "Home Team Code",
-		.type = FIELD_TYPE_TEAMID,
-		.len = 0,
-		.offset = offsetof(struct game, home_oid)
-	},
-	{
-		.index = 5,
-		.name = "Site",
-		.type = FIELD_TYPE_SITE_BOOL,
-		.len = 0,
-		.offset = offsetof(struct game, neutral)
-	},
-	{
-		.index = INT_MIN,
-		.name = NULL,
-		.type = FIELD_TYPE_END,
-		.len = 0,
-		.offset = 0
-	}
-};
-
 int parse_game_csv(struct fieldlist *f)
 {
-	static const int parse_fields = NUM_FIELDS(desc_game) - 1;
-	static const int num_fields = 6;
-
 	struct linehandler handler;
 	struct objectid oid;
 	int id;
 	struct game *game;
 
-	if (f->num_fields != num_fields) {
+	if (f->num_fields != total_fields_game) {
 		cfbstats_errno = CFBSTATS_EINVALIDFILE;
 		return CFBSTATS_ERROR;
 	}
 
 	if (f->line == 1) {
-		return check_csv_header_2(f, desc_game, parse_fields);
+		return check_csv_header_2(f, fdesc_game);
 	}
 
 	if ((game = objectdb_create_game()) == NULL) {
@@ -600,7 +458,7 @@ int parse_game_csv(struct fieldlist *f)
 		return CFBSTATS_ERROR;
 	}
 
-	handler.descriptions = desc_game;
+	handler.descriptions = fdesc_game;
 	handler.flist = f;
 	handler.obj = game;
 
