@@ -53,7 +53,6 @@ struct linehandler {
 	const struct fielddesc *current;
 	struct fieldlist *flist;
 	void *obj;
-	int line;
 };
 
 static struct map_entry id_map[CFBSTATS_ID_MAP_SIZE];
@@ -230,7 +229,7 @@ static int linehandler_get_conf_enum(struct linehandler *lh)
 	} else if (strcmp("FCS", str) == 0) {
 		*outdiv = CONFERENCE_FCS;
 	} else {
-		fprintf(stderr, "%s: invalid value for conference division on line %d\n", progname, lh->line);
+		fprintf(stderr, "%s: invalid value for conference division on line %d\n", progname, lh->flist->line);
 		return CFBSTATS_ERROR;
 	}
 
@@ -255,7 +254,7 @@ static int linehandler_get_site_bool(struct linehandler *lh)
 		*outbool = true;
 	} else {
 		cfbstats_errno = CFBSTATS_EINVALIDFILE;
-		fprintf(stderr, "%s: invalid value for game site (line %d)\n", progname, lh->line);
+		fprintf(stderr, "%s: invalid value for game site (line %d)\n", progname, lh->flist->line);
 		return CFBSTATS_ERROR;
 	}
 
@@ -276,7 +275,7 @@ static int linehandler_get_confid(struct linehandler *lh)
 	}
 
 	if ((oid = id_map_lookup(id)) == NULL) {
-		fprintf(stderr, "%s: conference id does not exist (line %d)\n", progname, lh->line);
+		fprintf(stderr, "%s: conference id does not exist (line %d)\n", progname, lh->flist->line);
 		return CFBSTATS_ERROR;
 	}
 
@@ -299,7 +298,7 @@ static int linehandler_get_teamid(struct linehandler *lh)
 	}
 
 	if ((oid = id_map_lookup(id)) == NULL) {
-		fprintf(stderr, "%s: team id does not exist (line %d)\n", progname, lh->line);
+		fprintf(stderr, "%s: team id does not exist (line %d)\n", progname, lh->flist->line);
 		return CFBSTATS_ERROR;
 	}
 
@@ -322,7 +321,7 @@ static int linehandler_get_gameid(struct linehandler *lh)
 	}
 
 	if ((oid = id_map_lookup(id)) == NULL) {
-		fprintf(stderr, "%s: game id does not exist (line %d)\n", progname, lh->line);
+		fprintf(stderr, "%s: game id does not exist (line %d)\n", progname, lh->flist->line);
 		return CFBSTATS_ERROR;
 	}
 
@@ -507,21 +506,18 @@ static const struct fielddesc desc_conference[] = {
 int parse_conference_csv(struct fieldlist *f)
 {
 	static const int num_fields = NUM_FIELDS(desc_conference) - 1;
-	static int line = 0;
 
 	struct linehandler handler;
 	struct conference *conf;
 	struct objectid oid;
 	int id;
 
-	line++;
-
 	if (f->num_fields != num_fields) {
 		cfbstats_errno = CFBSTATS_EINVALIDFILE;
 		return CFBSTATS_ERROR;
 	}
 
-	if (line == 1) {
+	if (f->line == 1) {
 		return check_csv_header_2(f, desc_conference, num_fields);
 	}
 
@@ -536,7 +532,6 @@ int parse_conference_csv(struct fieldlist *f)
 	handler.descriptions = desc_conference;
 	handler.flist = f;
 	handler.obj = conf;
-	handler.line = line;
 
 	/* parse the fields */
 	if (linehandler_parse(&handler, &id) != CFBSTATS_OK)
@@ -589,21 +584,18 @@ static const struct fielddesc desc_team[] = {
 int parse_team_csv(struct fieldlist *f)
 {
 	static const int num_fields = NUM_FIELDS(desc_team) - 1;
-	static int line = 0;
 
 	struct linehandler handler;
 	struct objectid oid;
 	int id;
 	struct team *team;
 
-	line++;
-
 	if (f->num_fields != num_fields) {
 		cfbstats_errno = CFBSTATS_EINVALIDFILE;
 		return CFBSTATS_ERROR;
 	}
 
-	if (line == 1) {
+	if (f->line == 1) {
 		return check_csv_header_2(f, desc_team, num_fields);
 	}
 
@@ -615,7 +607,6 @@ int parse_team_csv(struct fieldlist *f)
 	handler.descriptions = desc_team;
 	handler.flist = f;
 	handler.obj = team;
-	handler.line = line;
 
 	/* parse the fields */
 	if (linehandler_parse(&handler, &id) != CFBSTATS_OK)
@@ -683,21 +674,18 @@ int parse_game_csv(struct fieldlist *f)
 {
 	static const int parse_fields = NUM_FIELDS(desc_game) - 1;
 	static const int num_fields = 6;
-	static int line = 0;
 
 	struct linehandler handler;
 	struct objectid oid;
 	int id;
 	struct game *game;
 
-	line++;
-
 	if (f->num_fields != num_fields) {
 		cfbstats_errno = CFBSTATS_EINVALIDFILE;
 		return CFBSTATS_ERROR;
 	}
 
-	if (line == 1) {
+	if (f->line == 1) {
 		return check_csv_header_2(f, desc_game, parse_fields);
 	}
 
@@ -709,7 +697,6 @@ int parse_game_csv(struct fieldlist *f)
 	handler.descriptions = desc_game;
 	handler.flist = f;
 	handler.obj = game;
-	handler.line = line;
 
 	/* parse the fields */
 	if (linehandler_parse(&handler, &id) != CFBSTATS_OK)

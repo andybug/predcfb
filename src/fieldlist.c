@@ -62,6 +62,7 @@ void fieldlist_clear(struct fieldlist *f)
 {
 	strbuf_clear(&f->strbuf);
 	f->num_fields = 0;
+	f->line = 0;
 	f->iter = FIELDLIST_ITER_FIRST;
 	f->error = FIELDLIST_ENONE;
 }

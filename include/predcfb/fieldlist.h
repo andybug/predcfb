@@ -30,6 +30,7 @@ enum fieldlist_error {
 struct fieldlist {
 	const char *fields[FIELDLIST_MAX_FIELDS];
 	int num_fields;
+	int line;
 	int iter;
 	struct strbuf strbuf;
 	enum fieldlist_error error;
