@@ -5,6 +5,17 @@
 
 #include <predcfb/fieldlist.h>
 
+static const char *error_strings[] = {
+	"No error",
+	"Maximum fields reached",
+	"String buffer out of space",
+	"Null string received as input",
+	"Value not in range",
+	"Value is not expected type",
+	"Iterator is at the end",
+	"Index is out of bounds"
+};
+
 /* strbuf functions */
 
 const char *strbuf_add(struct strbuf *s, const char *str, size_t len)
@@ -193,4 +204,9 @@ int fieldlist_short_at(struct fieldlist *f, int at, short *out)
 	*out = (short) li;
 
 	return FIELDLIST_OK;
+}
+
+const char *fieldlist_strerror(const struct fieldlist *f)
+{
+	return error_strings[(int)f->error];
 }

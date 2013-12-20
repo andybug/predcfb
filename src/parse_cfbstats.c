@@ -311,27 +311,28 @@ int parse_stats_csv(struct fieldlist *f)
 		"Red Zone TD",
 		"Red Zone Field Goal"
 	};
-	static const int NUM_STAT_FIELDS = NUM_FIELDS(fields);
-	static bool processed_header = false;
+	struct stats_wrapper sw;
+	struct linehandler handler;
+	int id; // ignore this
 
-	const char *str;
-	int id;
-	struct team *team;
-	struct game *game;
-	const struct objectid *oid;
-	short sval;
-	bool home;
-
-	if (f->num_fields != NUM_STAT_FIELDS) {
+	if (f->num_fields != total_fields_stats) {
 		cfbstats_errno = CFBSTATS_EINVALIDFILE;
 		return CFBSTATS_ERROR;
 	}
 
-	if (!processed_header) {
-		processed_header = true;
-		return check_csv_header(f, fields, NUM_STAT_FIELDS);
+	if (f->line == 1) {
+		return check_csv_header_2(f, fdesc_stats);
 	}
 
+	handler.descriptions = fdesc_stats;
+	handler.flist = f;
+	handler.obj = &sw;
+
+	/* parse the fields */
+	if (linehandler_parse(&handler, &id) != CFBSTATS_OK)
+		return CFBSTATS_ERROR;
+
+#if 0
 	fieldlist_iter_begin(f);
 
 	/* get team pointer from team code */
@@ -525,6 +526,7 @@ int parse_stats_csv(struct fieldlist *f)
 	set_stat_value(game, offsetof(struct stats, penalty_yds), home, sval);
 
 	/* ignore the rest */
+#endif
 
 	return CFBSTATS_OK;
 }

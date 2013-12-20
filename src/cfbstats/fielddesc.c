@@ -116,6 +116,41 @@ const struct fielddesc fdesc_game[] = {
 	}
 };
 
+#define WRAPPER_OFFSET(a) (offsetof(struct stats_wrapper, a))
+#define STATS_OFFSET(a) (WRAPPER_OFFSET(stats) + \
+		offsetof(struct stats, a))
+
+const struct fielddesc fdesc_stats[] = {
+	{
+		.index = 0,
+		.name = "Team Code",
+		.type = FIELD_TYPE_TEAMID,
+		.len = 0,
+		.offset = WRAPPER_OFFSET(team_oid),
+	},
+	{
+		.index = 1,
+		.name = "Game Code",
+		.type = FIELD_TYPE_GAMEID,
+		.len = 0,
+		.offset = WRAPPER_OFFSET(game_oid),
+	},
+	{
+		.index = 2,
+		.name = "Rush Att",
+		.type = FIELD_TYPE_SHORT,
+		.len = 0,
+		.offset = STATS_OFFSET(rush_att),
+	},
+	{
+		.index = INT_MIN,
+		.name = NULL,
+		.type = FIELD_TYPE_END,
+		.len = 0,
+		.offset = 0
+	}
+};
+
 /* constants */
 #define NUM_FDESC(a) ((sizeof(a) / sizeof(*a)) - 1)
 
@@ -127,4 +162,7 @@ const int total_fields_team = 3;
 
 const int num_fdesc_game = NUM_FDESC(fdesc_game);
 const int total_fields_game = 6;
+
+const int num_fdesc_stats = NUM_FDESC(fdesc_stats);
+const int total_fields_stats = 68;
 

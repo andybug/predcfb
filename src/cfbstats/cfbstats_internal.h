@@ -1,6 +1,7 @@
 #ifndef CFBSTATS_INTERNAL_H
 #define CFBSTATS_INTERNAL_H
 
+#include <predcfb/predcfb.h>
 #include <predcfb/objectid.h>
 #include <predcfb/fieldlist.h>
 
@@ -57,6 +58,10 @@ extern const struct fielddesc fdesc_game[];
 extern const int num_fdesc_game;
 extern const int total_fields_game;
 
+extern const struct fielddesc fdesc_stats[];
+extern const int num_fdesc_stats;
+extern const int total_fields_stats;
+
 /* linehandler */
 struct linehandler {
 	const struct fielddesc *descriptions;
@@ -66,5 +71,15 @@ struct linehandler {
 };
 
 extern int linehandler_parse(struct linehandler *lh, int *id);
+
+/*
+ * struct that will contain the stats, team, and game ids
+ * for use with the linehandling implementation
+ */
+struct stats_wrapper {
+	struct objectid team_oid;
+	struct objectid game_oid;
+	struct stats stats;
+};
 
 #endif

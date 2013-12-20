@@ -59,6 +59,19 @@ static int get_str(struct linehandler *lh)
 	return CFBSTATS_OK;
 }
 
+static int get_short(struct linehandler *lh)
+{
+	const struct fielddesc *cur = lh->current;
+	short *sout = (short*) (((intptr_t) lh->obj) + cur->offset);
+
+	if (fieldlist_short_at(lh->flist, cur->index, sout) != FIELDLIST_OK) {
+		/* FIXME */
+		return CFBSTATS_ERROR;
+	}
+
+	return CFBSTATS_OK;
+}
+
 static int get_conf_enum(struct linehandler *lh)
 {
 	const char *str;
@@ -157,15 +170,23 @@ static int get_teamid(struct linehandler *lh)
 static int get_gameid(struct linehandler *lh)
 {
 	const struct fielddesc *cur = lh->current;
+	const char *str;
 	int id;
 	const struct objectid *oid;
 	intptr_t poid = ((intptr_t) lh->obj) + cur->offset;
 	struct objectid *outoid = (struct objectid*) poid;
 
-	if (fieldlist_int_at(lh->flist, cur->index, &id) != FIELDLIST_OK) {
-		/* FIXME */
+	if (fieldlist_str_at(lh->flist, cur->index, &str) != FIELDLIST_OK) {
+		const char *err = fieldlist_strerror(lh->flist);
+		fprintf(stderr, "%s: error parsing field index %d (line %d): %s\n",
+				progname,
+				cur->index,
+				lh->flist->line,
+				err);
 		return CFBSTATS_ERROR;
 	}
+
+	id = pack_game_code(str);
 
 	if ((oid = id_map_lookup(id)) == NULL) {
 		fprintf(stderr, "%s: game id does not exist (line %d)\n", progname, lh->flist->line);
@@ -229,6 +250,11 @@ int linehandler_parse(struct linehandler *lh, int *id)
 				return CFBSTATS_ERROR;
 			break;
 
+		case FIELD_TYPE_SHORT:
+			if (get_short(lh) != CFBSTATS_OK)
+				return CFBSTATS_ERROR;
+			break;
+
 		case FIELD_TYPE_DATE:
 			if (get_date(lh) != CFBSTATS_OK)
 				return CFBSTATS_ERROR;
@@ -257,6 +283,10 @@ int linehandler_parse(struct linehandler *lh, int *id)
 		case FIELD_TYPE_SITE_BOOL:
 			if (get_site_bool(lh) != CFBSTATS_OK)
 				return CFBSTATS_ERROR;
+			break;
+
+		case FIELD_TYPE_END:
+			/* this should never happen... */
 			break;
 		}
 
