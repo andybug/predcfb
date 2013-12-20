@@ -36,7 +36,6 @@ enum field_type {
 	FIELD_TYPE_SHORT,
 	FIELD_TYPE_DATE,
 	/* special types */
-	FIELD_TYPE_IGNORE,
 	FIELD_TYPE_CONFERENCE_ENUM,
 	FIELD_TYPE_SITE_BOOL
 };
@@ -442,9 +441,6 @@ static int linehandler_parse(struct linehandler *lh, int *id)
 			if (linehandler_get_site_bool(lh) != CFBSTATS_OK)
 				return CFBSTATS_ERROR;
 			break;
-
-		case FIELD_TYPE_IGNORE:
-			break;
 		}
 
 		lh->current++;
@@ -483,23 +479,20 @@ static int check_csv_header_2(struct fieldlist *f,
 {
 	int i;
 	const char *field;
-	const struct fielddesc *desc = desc_list;
-
-	assert(f->num_fields == num);
-
-	fieldlist_iter_begin(f);
+	const struct fielddesc *desc;
 
 	for (i = 0; i < num; i++) {
-		field = fieldlist_iter_next(f);
-		if (desc->index == i) {
-			if (strcmp(field, desc->name) != 0) {
-				cfbstats_errno = CFBSTATS_EINVALIDFILE;
-				return CFBSTATS_ERROR;
-			}
+		desc = &desc_list[i];
 
-			desc++;
-			if (desc->type == FIELD_TYPE_END)
-				break;
+		if (desc->type == FIELD_TYPE_END)
+			break;
+
+		if (fieldlist_str_at(f, desc->index, &field) != FIELDLIST_OK)
+			return CFBSTATS_ERROR;
+
+		if (strcmp(field, desc->name) != 0) {
+			cfbstats_errno = CFBSTATS_EINVALIDFILE;
+			return CFBSTATS_ERROR;
 		}
 	}
 
@@ -700,13 +693,6 @@ static const struct fielddesc desc_game[] = {
 		.offset = offsetof(struct game, home_oid)
 	},
 	{
-		.index = 4,
-		.name = "Stadium Code",
-		.type = FIELD_TYPE_IGNORE,
-		.len = 0,
-		.offset = 0
-	},
-	{
 		.index = 5,
 		.name = "Site",
 		.type = FIELD_TYPE_SITE_BOOL,
@@ -724,7 +710,8 @@ static const struct fielddesc desc_game[] = {
 
 static int parse_game_csv(struct fieldlist *f)
 {
-	static const int num_fields = NUM_FIELDS(desc_game) - 1;
+	static const int parse_fields = NUM_FIELDS(desc_game) - 1;
+	static const int num_fields = 6;
 	static int line = 0;
 
 	struct linehandler handler;
@@ -740,7 +727,7 @@ static int parse_game_csv(struct fieldlist *f)
 	}
 
 	if (line == 1) {
-		return check_csv_header_2(f, desc_game, num_fields);
+		return check_csv_header_2(f, desc_game, parse_fields);
 	}
 
 	if ((game = objectdb_create_game()) == NULL) {
