@@ -26,7 +26,7 @@ extern int zipfile_close_archive(zf_readctx *z);
 extern int zipfile_open_file(zf_readctx *z, const char *file);
 extern int zipfile_close_file(zf_readctx *z);
 extern ssize_t zipfile_read_file(zf_readctx *z, char *buf, size_t count);
-extern const char *zipfile_strerr(zf_readctx *z);
+extern const char *zipfile_strerr(const zf_readctx *z);
 extern enum zipfile_err zipfile_get_error(zf_readctx *z);
 
 #endif

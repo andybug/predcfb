@@ -20,6 +20,7 @@ struct conference {
 };
 
 struct stats {
+	/* offensive stats */
 	short rush_att;
 	short rush_yds;
 	short rush_tds;
@@ -30,16 +31,18 @@ struct stats {
 	short pass_tds;
 	short pass_int;
 
-	short fg_att;
-	short fg_made;
-
 	short fumbles;
 	short fumbles_lost;
 
-	short penalties;
-	short penalty_yds;
-
 	short points;
+
+	/* defensive stats */
+#if 0
+	short sacks;
+	short hurries;
+	short fumbles_forced;
+	short pass_breakups;
+#endif
 };
 
 #define TEAM_NAME_MAX   64

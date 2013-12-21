@@ -23,12 +23,14 @@ enum fieldlist_error {
 	FIELDLIST_ENULLSTR,
 	FIELDLIST_ERANGE,
 	FIELDLIST_EWRONGTYPE,
-	FIELDLIST_EITEREND
+	FIELDLIST_EITEREND,
+	FIELDLIST_EINDEX
 };
 
 struct fieldlist {
 	const char *fields[FIELDLIST_MAX_FIELDS];
 	int num_fields;
+	int line;
 	int iter;
 	struct strbuf strbuf;
 	enum fieldlist_error error;
@@ -40,7 +42,11 @@ extern void strbuf_clear(struct strbuf *s);
 extern int fieldlist_add(struct fieldlist *f, const char *str, size_t len);
 extern void fieldlist_clear(struct fieldlist *f);
 
-extern const char *fieldlist_strerror(struct fieldlist *f);
+extern const char *fieldlist_strerror(const struct fieldlist *f);
+
+extern int fieldlist_str_at(struct fieldlist *f, int at, const char **out);
+extern int fieldlist_int_at(struct fieldlist *f, int at, int *out);
+extern int fieldlist_short_at(struct fieldlist *f, int at, short *out);
 
 extern void fieldlist_iter_begin(struct fieldlist *f);
 extern const char *fieldlist_iter_next(struct fieldlist *f);

@@ -9,6 +9,7 @@ struct csvparse_context {
 	struct csv_parser parser;
 	enum csvp_error error;
 	struct fieldlist fieldlist;
+	int lines;
 	int (*handler)(struct fieldlist*);
 };
 
@@ -49,6 +50,9 @@ static void send_fieldlist_to_parse(int ch, void *mydata)
 	(void) ch;
 
 	if (c->error == CSVP_ENONE) {
+		c->lines++;
+		c->fieldlist.line = c->lines;
+
 		if (c->handler(&c->fieldlist) != 0)
 			c->error = CSVP_EPARSE;
 	}
@@ -129,12 +133,12 @@ int csvp_parse(csvp_ctx *c, char *buf, size_t len)
 	return CSVP_OK;
 }
 
-const char *csvp_strerror(csvp_ctx *c)
+const char *csvp_strerror(const csvp_ctx *c)
 {
 	return csvparse_errors[c->error];
 }
 
-enum csvp_error csvp_error(csvp_ctx *c)
+enum csvp_error csvp_error(const csvp_ctx *c)
 {
 	return c->error;
 }
