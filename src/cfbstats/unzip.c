@@ -153,13 +153,5 @@ int cfbstats_read_zipfile(const char *path)
 		return CFBSTATS_ERROR;
 	}
 
-	/*
-	 * finish up by setting all of the pointers in the data
-	 * from the object ids
-	 * FIXME - this isn't necessary
-	 */
-	if (objectdb_link() != OBJECTDB_OK)
-		return CFBSTATS_ERROR;
-
 	return CFBSTATS_OK;
 }

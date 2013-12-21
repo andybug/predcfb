@@ -79,6 +79,10 @@ void objectid_from_game(const struct game *g, struct objectid *id)
 	struct tm tm;
 	size_t num_bytes;
 	sha1_context ctx;
+	size_t len;
+
+	assert(g->home != NULL);
+	assert(g->away != NULL);
 
 	/* create date string */
 	gmtime_r(&g->date, &tm);
@@ -87,10 +91,12 @@ void objectid_from_game(const struct game *g, struct objectid *id)
 
 	sha1_starts(&ctx);
 
-	/* hash home team oid */
-	sha1_update(&ctx, g->home_oid.md, OBJECTID_MD_SIZE);
+	/* hash home team name */
+	len = strlen(g->home->name);
+	sha1_update(&ctx, (unsigned char*)g->home->name, len);
 	/* hash away team oid */
-	sha1_update(&ctx, g->away_oid.md, OBJECTID_MD_SIZE);
+	len = strlen(g->away->name);
+	sha1_update(&ctx, (unsigned char*)g->away->name, len);
 	/* hash time_t */
 	sha1_update(&ctx, (unsigned char*)date_buf, DATE_BUF_SIZE - 1);
 

@@ -106,6 +106,12 @@ int parse_team_csv(struct fieldlist *f)
 	if (linehandler_parse(&handler, &id) != CFBSTATS_OK)
 		return CFBSTATS_ERROR;
 
+	/* set the conference pointer from the oid */
+	if ((team->conf = objectdb_get_conference(&team->conf_oid)) == NULL) {
+		cfbstats_errno = CFBSTATS_EOIDLOOKUP;
+		return CFBSTATS_ERROR;
+	}
+
 	/* add the team to the object db */
 	if (objectdb_add_team(team, &oid) != OBJECTDB_OK)
 		return CFBSTATS_ERROR;
@@ -147,6 +153,17 @@ int parse_game_csv(struct fieldlist *f)
 	/* parse the fields */
 	if (linehandler_parse(&handler, &id) != CFBSTATS_OK)
 		return CFBSTATS_ERROR;
+
+	/* set home and away team pointers */
+	if ((game->home = objectdb_get_team(&game->home_oid)) == NULL) {
+		cfbstats_errno = CFBSTATS_EOIDLOOKUP;
+		return CFBSTATS_ERROR;
+	}
+
+	if ((game->away = objectdb_get_team(&game->away_oid)) == NULL) {
+		cfbstats_errno = CFBSTATS_EOIDLOOKUP;
+		return CFBSTATS_ERROR;
+	}
 
 	/* add the game to the db */
 	if (objectdb_add_game(game, &oid) != OBJECTDB_OK)

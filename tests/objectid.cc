@@ -5,6 +5,7 @@
 #include <gtest/gtest.h>
 
 extern "C" {
+#include <polarssl/sha1.h>
 #include <predcfb/predcfb.h>
 #include <predcfb/objectid.h>
 }
@@ -107,13 +108,11 @@ namespace {
 
 	TEST_F(ObjectIDTest, Game)
 	{
-		static const char *team1_name = "Alabama";
-		static const char *team2_name = "LSU";
-		static const char *game_date = "2013-12-01 00:00:00 +0000";
-		static const char *game_sha1 =
-			"1ac81af1a151207ae9addc395ffe609911ba8b11";
-		// game_sha1 was calculated by hand using xxd and sha1sum
-		// for this example
+		const char *team1_name = "Alabama";
+		const char *team2_name = "LSU";
+		const char *game_date = "2013-12-01 00:00:00 +0000";
+		const char *game_sha1 = "a1bbb417067153367d1443d82bc4b65904d8b13a";
+
 		struct team team1;
 		struct team team2;
 		struct game game;
@@ -127,11 +126,8 @@ namespace {
 		strncpy(team1.name, team1_name, TEAM_NAME_MAX);
 		strncpy(team2.name, team2_name, TEAM_NAME_MAX);
 
-		objectid_from_team(&team1, &oid1);
-		objectid_from_team(&team2, &oid2);
-
-		game.home_oid = oid1;
-		game.away_oid = oid2;
+		game.home = &team1;
+		game.away = &team2;
 
 		// times are always GMT
 		strptime(game_date, "%Y-%m-%d %H:%M:%S %z", &tm);

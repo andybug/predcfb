@@ -295,39 +295,6 @@ void objectdb_clear(void)
 	memset(object_map, 0, sizeof(object_map));
 }
 
-int objectdb_link(void)
-{
-	int i;
-	struct team *team;
-	struct conference *conf;
-	struct game *game;
-
-	/* set the conference pointer for each team */
-	for (i = 0; i < num_teams; i++) {
-		team = &teams[i];
-
-		if ((conf = objectdb_get_conference(&team->conf_oid)) == NULL)
-			return OBJECTDB_ERROR;
-
-		team->conf = conf;
-	}
-
-	/* set the home and away pointers for each game */
-	for (i = 0; i < num_games; i++) {
-		game = &games[i];
-
-		if ((team = objectdb_get_team(&game->home_oid)) == NULL)
-			return OBJECTDB_ERROR;
-		game->home = team;
-
-		if ((team = objectdb_get_team(&game->away_oid)) == NULL)
-			return OBJECTDB_ERROR;
-		game->away = team;
-	}
-
-	return OBJECTDB_OK;
-}
-
 int objectdb_write(void)
 {
 	return objectdb_write_yaml(object_table, num_objects);
