@@ -65,7 +65,12 @@ static int get_short(struct linehandler *lh)
 	short *sout = (short*) (((intptr_t) lh->obj) + cur->offset);
 
 	if (fieldlist_short_at(lh->flist, cur->index, sout) != FIELDLIST_OK) {
-		/* FIXME */
+		const char *err = fieldlist_strerror(lh->flist);
+		fprintf(stderr, "%s: error parsing field index %d (line %d): %s\n",
+				progname,
+				cur->index,
+				lh->flist->line,
+				err);
 		return CFBSTATS_ERROR;
 	}
 
