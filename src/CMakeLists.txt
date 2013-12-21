@@ -14,9 +14,9 @@ ADD_LIBRARY(
 	cfbstats/unzip.c
 	csvparse.c
 	fieldlist.c
-	objectdb.c
-	objectdb_save.c
-	objectid.c
+	objectdb/core.c
+	objectdb/objectid.c
+	objectdb/write.c
 	options.c
 	zipfile.c
 )

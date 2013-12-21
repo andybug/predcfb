@@ -328,7 +328,7 @@ int objectdb_link(void)
 	return OBJECTDB_OK;
 }
 
-int objectdb_save(void)
+int objectdb_write(void)
 {
-	return objectdb_save_yaml(object_table, num_objects);
+	return objectdb_write_yaml(object_table, num_objects);
 }

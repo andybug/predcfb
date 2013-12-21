@@ -387,7 +387,7 @@ static int emit_objects(struct save_context *ctx)
 	return OBJECTDB_OK;
 }
 
-int objectdb_save_yaml(const struct object *objects, int num_objects)
+int objectdb_write_yaml(const struct object *objects, int num_objects)
 {
 	struct save_context ctx;
 	int err = OBJECTDB_ERROR;

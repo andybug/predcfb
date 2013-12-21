@@ -49,7 +49,7 @@ int main(int argc, char **argv)
 		exit(EXIT_FAILURE);
 	}
 
-	if (opt_save && (objectdb_save() != OBJECTDB_OK))
+	if (opt_save && (objectdb_write() != OBJECTDB_OK))
 		exit(EXIT_FAILURE);
 
 	exit(EXIT_SUCCESS);

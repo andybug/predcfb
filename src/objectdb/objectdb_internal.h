@@ -21,6 +21,6 @@ struct object {
 	struct object *next;
 };
 
-extern int objectdb_save_yaml(const struct object *objects, int num_objects);
+extern int objectdb_write_yaml(const struct object *objects, int num_objects);
 
 #endif
