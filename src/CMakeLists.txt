@@ -18,7 +18,6 @@ ADD_LIBRARY(
 	objectdb_save.c
 	objectid.c
 	options.c
-	parse_cfbstats.c
 	zipfile.c
 )
 
