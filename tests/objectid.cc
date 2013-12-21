@@ -5,7 +5,6 @@
 #include <gtest/gtest.h>
 
 extern "C" {
-#include <polarssl/sha1.h>
 #include <predcfb/predcfb.h>
 #include <predcfb/objectid.h>
 }
