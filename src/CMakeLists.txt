@@ -6,6 +6,7 @@ ADD_LIBRARY(
 	libpredcfb
 	OBJECT
 	# --- sources ---
+	cfbstats/core.c
 	cfbstats/fielddesc.c
 	cfbstats/id_map.c
 	cfbstats/linehandler.c
