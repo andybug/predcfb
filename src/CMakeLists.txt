@@ -10,6 +10,7 @@ ADD_LIBRARY(
 	cfbstats/fielddesc.c
 	cfbstats/id_map.c
 	cfbstats/linehandler.c
+	cfbstats/parsers.c
 	cfbstats/unzip.c
 	csvparse.c
 	fieldlist.c
