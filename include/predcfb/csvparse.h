@@ -10,7 +10,6 @@
 
 enum csvparse_error {
 	CSVP_ENONE,
-	CSVP_ENOMEM,
 	CSVP_ETOOMANY,
 	CSVP_ENOBUFS,
 	CSVP_EPARSE,

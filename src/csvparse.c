@@ -6,14 +6,6 @@
 #include <predcfb/csvparse.h>
 #include <predcfb/fieldlist.h>
 
-static const char *csvparse_errors[] = {
-	"No error",
-	"Memory allocation failed",
-	"Too many fields",
-	"Not enough buffer space for field strings",
-	"Parser error"
-};
-
 static void add_to_fieldlist(void *str, size_t len, void *mydata)
 {
 	struct csvparse *c = mydata;
@@ -123,7 +115,35 @@ int csvp_parse(struct csvparse *c, char *buf, size_t len)
 
 const char *csvp_strerror(const struct csvparse *c)
 {
-	return csvparse_errors[c->error];
+	const char *err;
+
+	switch (c->error) {
+	case CSVP_ENONE:
+		err = "No error";
+		break;
+
+	case CSVP_ETOOMANY:
+		err = "Too many fields";
+		break;
+
+	case CSVP_ENOBUFS:
+		err = "Not enough buffer space";
+		break;
+
+	case CSVP_EPARSE:
+		err = "Parser error";
+		break;
+
+	case CSVP_EINTERNAL:
+		err = "Internal libcsv error";
+		break;
+
+	default:
+		err = "No such error";
+		break;
+	}
+
+	return err;
 }
 
 enum csvparse_error csvp_error(const struct csvparse *c)
