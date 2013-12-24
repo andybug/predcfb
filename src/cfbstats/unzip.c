@@ -40,7 +40,7 @@ static void handle_zipfile_error(const zf_readctx *zf)
 }
 
 static void handle_csvparse_error(
-		const csvp_ctx *csvp,
+		const struct csvparse *csvp,
 		const struct file_handler *handler)
 {
 	const char *err;
@@ -66,16 +66,15 @@ static int read_csv_file(zf_readctx *zf, const struct file_handler *handler)
 	static const int CSV_BUF_SIZE = 4096;
 	char buf[CSV_BUF_SIZE];
 	ssize_t bytes;
-	csvp_ctx *csvp;
+	struct csvparse csvp;
 
 	if (zipfile_open_file(zf, handler->file) != ZIPFILE_OK) {
 		handle_zipfile_error(zf);
 		return CFBSTATS_ERROR;
 	}
 
-	csvp = csvp_create(handler->parsing_func);
-	if (!csvp) {
-		fprintf(stderr, "%s: csvp initialization error\n", progname);
+	if (csvp_init(&csvp, handler->parsing_func) != CSVP_OK) {
+		handle_csvparse_error(&csvp, handler);
 		return CFBSTATS_ERROR;
 	}
 
@@ -86,14 +85,14 @@ static int read_csv_file(zf_readctx *zf, const struct file_handler *handler)
 		if (bytes == 0) /* eof */
 			break;
 
-		if (csvp_parse(csvp, buf, bytes) != CSVP_OK) {
-			handle_csvparse_error(csvp, handler);
+		if (csvp_parse(&csvp, buf, bytes) != CSVP_OK) {
+			handle_csvparse_error(&csvp, handler);
 			return CFBSTATS_ERROR;
 		}
 	}
 
-	if (csvp_destroy(csvp) != CSVP_OK) {
-		handle_csvparse_error(csvp, handler);
+	if (csvp_destroy(&csvp) != CSVP_OK) {
+		handle_csvparse_error(&csvp, handler);
 		return CFBSTATS_ERROR;
 	}
 

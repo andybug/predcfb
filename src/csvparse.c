@@ -1,17 +1,10 @@
 
 #include <stdlib.h>
+#include <string.h>
 
 #include <libcsv/csv.h>
 #include <predcfb/csvparse.h>
 #include <predcfb/fieldlist.h>
-
-struct csvparse_context {
-	struct csv_parser parser;
-	enum csvp_error error;
-	struct fieldlist fieldlist;
-	int lines;
-	int (*handler)(struct fieldlist*);
-};
 
 static const char *csvparse_errors[] = {
 	"No error",
@@ -23,7 +16,7 @@ static const char *csvparse_errors[] = {
 
 static void add_to_fieldlist(void *str, size_t len, void *mydata)
 {
-	struct csvparse_context *c = mydata;
+	struct csvparse *c = mydata;
 
 	if (fieldlist_add(&c->fieldlist, str, len) != FIELDLIST_OK) {
 		switch (c->fieldlist.error) {
@@ -46,7 +39,7 @@ static void add_to_fieldlist(void *str, size_t len, void *mydata)
 
 static void send_fieldlist_to_parse(int ch, void *mydata)
 {
-	struct csvparse_context *c = mydata;
+	struct csvparse *c = mydata;
 	(void) ch;
 
 	if (c->error == CSVP_ENONE) {
@@ -60,25 +53,21 @@ static void send_fieldlist_to_parse(int ch, void *mydata)
 	fieldlist_clear(&c->fieldlist);
 }
 
-csvp_ctx *csvp_create(int (*handler)(struct fieldlist*))
+int csvp_init(struct csvparse *c, int (*handler)(struct fieldlist*))
 {
-	csvp_ctx *c;
-
-	c = calloc(1, sizeof(*c));
-	if (!c)
-		return NULL;
+	memset(c, 0, sizeof(*c));
 
 	if (csv_init(&c->parser, CSV_STRICT) != CSV_SUCCESS) {
-		free(c);
-		return NULL;
+		c->error = CSVP_EINTERNAL;
+		return CSVP_ERROR;
 	}
 
 	c->handler = handler;
 
-	return c;
+	return CSVP_OK;
 }
 
-int csvp_destroy(csvp_ctx *c)
+int csvp_destroy(struct csvparse *c)
 {
 	int err;
 
@@ -106,7 +95,7 @@ int csvp_destroy(csvp_ctx *c)
 	return CSVP_OK;
 }
 
-int csvp_parse(csvp_ctx *c, char *buf, size_t len)
+int csvp_parse(struct csvparse *c, char *buf, size_t len)
 {
 	size_t bytes;
 
@@ -133,12 +122,12 @@ int csvp_parse(csvp_ctx *c, char *buf, size_t len)
 	return CSVP_OK;
 }
 
-const char *csvp_strerror(const csvp_ctx *c)
+const char *csvp_strerror(const struct csvparse *c)
 {
 	return csvparse_errors[c->error];
 }
 
-enum csvp_error csvp_error(const csvp_ctx *c)
+enum csvp_error csvp_error(const struct csvparse *c)
 {
 	return c->error;
 }
