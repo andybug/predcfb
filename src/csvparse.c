@@ -72,9 +72,9 @@ int csvp_destroy(struct csvparse *c)
 	int err;
 
 	err = csv_fini(&c->parser,
-	               add_to_fieldlist,
-	               send_fieldlist_to_parse,
-	               c);
+			add_to_fieldlist,
+			send_fieldlist_to_parse,
+			c);
 
 	if (err != CSV_SUCCESS) {
 		c->error = CSVP_EPARSE;
@@ -99,11 +99,11 @@ int csvp_parse(struct csvparse *c, char *buf, size_t len)
 	size_t bytes;
 
 	bytes = csv_parse(&c->parser,
-	                  buf,
-	                  len,
-	                  add_to_fieldlist,
-	                  send_fieldlist_to_parse,
-	                  c);
+			buf,
+			len,
+			add_to_fieldlist,
+			send_fieldlist_to_parse,
+			c);
 
 	if (bytes != len) {
 		c->error = CSVP_EPARSE;
@@ -126,7 +126,7 @@ const char *csvp_strerror(const struct csvparse *c)
 	return csvparse_errors[c->error];
 }
 
-enum csvp_error csvp_error(const struct csvparse *c)
+enum csvparse_error csvp_error(const struct csvparse *c)
 {
 	return c->error;
 }

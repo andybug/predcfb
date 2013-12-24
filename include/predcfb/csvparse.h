@@ -8,7 +8,7 @@
 #define CSVP_OK		  0
 #define CSVP_ERROR	(-1)
 
-enum csvp_error {
+enum csvparse_error {
 	CSVP_ENONE,
 	CSVP_ENOMEM,
 	CSVP_ETOOMANY,
@@ -22,7 +22,7 @@ struct csvparse {
 	int lines;
 	struct fieldlist fieldlist;
 	int (*handler)(struct fieldlist*);
-	enum csvp_error error;
+	enum csvparse_error error;
 };
 
 extern int csvp_init(
@@ -31,7 +31,7 @@ extern int csvp_init(
 extern int csvp_destroy(struct csvparse *c);
 extern int csvp_parse(struct csvparse *c, char *buf, size_t len);
 
-extern enum csvp_error csvp_error(const struct csvparse *c);
+extern enum csvparse_error csvp_error(const struct csvparse *c);
 extern const char *csvp_strerror(const struct csvparse *c);
 
 #endif
