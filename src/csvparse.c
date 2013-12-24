@@ -90,7 +90,6 @@ int csvp_destroy(struct csvparse *c)
 		return CSVP_ERROR;
 
 	csv_free(&c->parser);
-	free(c);
 
 	return CSVP_OK;
 }
