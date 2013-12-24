@@ -38,7 +38,6 @@ TARGET_LINK_LIBRARIES(
 	libcsv
 	miniunz
 	polarssl
-	libb64
 	# --- shared libraries ---
 	yaml
 	z
