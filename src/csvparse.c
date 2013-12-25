@@ -4,48 +4,47 @@
 
 #include <libcsv/csv.h>
 #include <predcfb/csvparse.h>
-#include <predcfb/fieldlist.h>
 
-static void add_to_fieldlist(void *str, size_t len, void *mydata)
+static void add_to_csvline(void *str, size_t len, void *mydata)
 {
 	struct csvparse *c = mydata;
 
-	if (fieldlist_add(&c->fieldlist, str, len) != FIELDLIST_OK) {
-		switch (c->fieldlist.error) {
+	if (csvline_add(&c->csvline, str, len) != CSVP_OK) {
+		switch (c->csvline.error) {
 
-		case FIELDLIST_EMAXFIELDS:
+		case CSVLINE_EMAXFIELDS:
 			c->error = CSVP_ETOOMANY;
 			break;
 
-		case FIELDLIST_ESTRBUFSPACE:
+		case CSVLINE_ESTRBUFSPACE:
 			c->error = CSVP_ENOBUFS;
 			break;
 
 		default:
-		case FIELDLIST_ENONE:
+		case CSVLINE_ENONE:
 			/* what? */
 			break;
 		}
 	}
 }
 
-static void send_fieldlist_to_parse(int ch, void *mydata)
+static void send_csvline_to_parse(int ch, void *mydata)
 {
 	struct csvparse *c = mydata;
 	(void) ch;
 
 	if (c->error == CSVP_ENONE) {
 		c->lines++;
-		c->fieldlist.line = c->lines;
+		c->csvline.line = c->lines;
 
-		if (c->handler(&c->fieldlist) != 0)
+		if (c->handler(&c->csvline) != 0)
 			c->error = CSVP_EPARSE;
 	}
 
-	fieldlist_clear(&c->fieldlist);
+	csvline_clear(&c->csvline);
 }
 
-int csvp_init(struct csvparse *c, int (*handler)(struct fieldlist*))
+int csvp_init(struct csvparse *c, int (*handler)(struct csvline*))
 {
 	memset(c, 0, sizeof(*c));
 
@@ -64,8 +63,8 @@ int csvp_destroy(struct csvparse *c)
 	int err;
 
 	err = csv_fini(&c->parser,
-			add_to_fieldlist,
-			send_fieldlist_to_parse,
+			add_to_csvline,
+			send_csvline_to_parse,
 			c);
 
 	if (err != CSV_SUCCESS) {
@@ -75,7 +74,7 @@ int csvp_destroy(struct csvparse *c)
 
 	/*
 	 * this check is necessary since these errors are detected and
-	 * set in the callbacks add_to_fieldlist and send_fieldlist_to_parse,
+	 * set in the callbacks add_to_csvline and send_csvline_to_parse,
 	 * which cannot return an error value
 	 */
 	if (c->error == CSVP_ETOOMANY || c->error == CSVP_EPARSE)
@@ -93,8 +92,8 @@ int csvp_parse(struct csvparse *c, char *buf, size_t len)
 	bytes = csv_parse(&c->parser,
 			buf,
 			len,
-			add_to_fieldlist,
-			send_fieldlist_to_parse,
+			add_to_csvline,
+			send_csvline_to_parse,
 			c);
 
 	if (bytes != len) {
@@ -104,7 +103,7 @@ int csvp_parse(struct csvparse *c, char *buf, size_t len)
 
 	/*
 	 * this check is necessary since these errors are detected and
-	 * set in the callbacks add_to_fieldlist and send_fieldlist_to_parse,
+	 * set in the callbacks add_to_csvline and send_csvline_to_parse,
 	 * which cannot return an error value
 	 */
 	if (c->error == CSVP_ETOOMANY || c->error == CSVP_EPARSE)

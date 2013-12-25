@@ -7,7 +7,7 @@
 
 #include <predcfb/cfbstats.h>
 #include <predcfb/predcfb.h>
-#include <predcfb/fieldlist.h>
+#include <predcfb/csvparse.h>
 #include <predcfb/objectid.h>
 
 #include "cfbstats_internal.h"
@@ -18,8 +18,8 @@ static int get_ownid(struct linehandler *lh, int *id)
 {
 	int err;
 
-	err = fieldlist_int_at(lh->flist, lh->current->index, id);
-	if (err != FIELDLIST_OK) {
+	err = csvline_int_at(lh->csvline, lh->current->index, id);
+	if (err != CSVP_OK) {
 		/* FIXME */
 		return CFBSTATS_ERROR;
 	}
@@ -32,8 +32,8 @@ static int get_owngameid(struct linehandler *lh, int *id)
 	int err;
 	const char *str;
 
-	err = fieldlist_str_at(lh->flist, lh->current->index, &str);
-	if (err != FIELDLIST_OK) {
+	err = csvline_str_at(lh->csvline, lh->current->index, &str);
+	if (err != CSVP_OK) {
 		/* FIXME */
 		return CFBSTATS_ERROR;
 	}
@@ -49,7 +49,7 @@ static int get_str(struct linehandler *lh)
 	const struct fielddesc *cur = lh->current;
 	char *outbuf = (char*) (((intptr_t) lh->obj) + cur->offset);
 
-	if (fieldlist_str_at(lh->flist, cur->index, &str) != FIELDLIST_OK) {
+	if (csvline_str_at(lh->csvline, cur->index, &str) != CSVP_OK) {
 		/* FIXME */
 		return CFBSTATS_ERROR;
 	}
@@ -64,12 +64,12 @@ static int get_short(struct linehandler *lh)
 	const struct fielddesc *cur = lh->current;
 	short *sout = (short*) (((intptr_t) lh->obj) + cur->offset);
 
-	if (fieldlist_short_at(lh->flist, cur->index, sout) != FIELDLIST_OK) {
-		const char *err = fieldlist_strerror(lh->flist);
+	if (csvline_short_at(lh->csvline, cur->index, sout) != CSVP_OK) {
+		const char *err = csvline_strerror(lh->csvline);
 		fprintf(stderr, "%s: error parsing field index %d (line %d): %s\n",
 				progname,
 				cur->index,
-				lh->flist->line,
+				lh->csvline->line,
 				err);
 		return CFBSTATS_ERROR;
 	}
@@ -84,7 +84,7 @@ static int get_conf_enum(struct linehandler *lh)
 	intptr_t pval = ((intptr_t) lh->obj) + cur->offset;
 	enum conference_division *outdiv = (enum conference_division*) pval;
 
-	if (fieldlist_str_at(lh->flist, cur->index, &str) != FIELDLIST_OK) {
+	if (csvline_str_at(lh->csvline, cur->index, &str) != CSVP_OK) {
 		/* FIXME */
 		return CFBSTATS_ERROR;
 	}
@@ -94,7 +94,7 @@ static int get_conf_enum(struct linehandler *lh)
 	} else if (strcmp("FCS", str) == 0) {
 		*outdiv = CONFERENCE_FCS;
 	} else {
-		fprintf(stderr, "%s: invalid value for conference division on line %d\n", progname, lh->flist->line);
+		fprintf(stderr, "%s: invalid value for conference division on line %d\n", progname, lh->csvline->line);
 		return CFBSTATS_ERROR;
 	}
 
@@ -108,7 +108,7 @@ static int get_site_bool(struct linehandler *lh)
 	intptr_t pbool = ((intptr_t) lh->obj) + cur->offset;
 	bool *outbool = (bool*) pbool;
 
-	if (fieldlist_str_at(lh->flist, cur->index, &str) != FIELDLIST_OK) {
+	if (csvline_str_at(lh->csvline, cur->index, &str) != CSVP_OK) {
 		/* FIXME */
 		return CFBSTATS_ERROR;
 	}
@@ -119,7 +119,7 @@ static int get_site_bool(struct linehandler *lh)
 		*outbool = true;
 	} else {
 		cfbstats_errno = CFBSTATS_EINVALIDFILE;
-		fprintf(stderr, "%s: invalid value for game site (line %d)\n", progname, lh->flist->line);
+		fprintf(stderr, "%s: invalid value for game site (line %d)\n", progname, lh->csvline->line);
 		return CFBSTATS_ERROR;
 	}
 
@@ -134,13 +134,13 @@ static int get_confid(struct linehandler *lh)
 	intptr_t poid = ((intptr_t) lh->obj) + cur->offset;
 	struct objectid *outoid = (struct objectid*) poid;
 
-	if (fieldlist_int_at(lh->flist, cur->index, &id) != FIELDLIST_OK) {
+	if (csvline_int_at(lh->csvline, cur->index, &id) != CSVP_OK) {
 		/* FIXME */
 		return CFBSTATS_ERROR;
 	}
 
 	if ((oid = id_map_lookup(id)) == NULL) {
-		fprintf(stderr, "%s: conference id does not exist (line %d)\n", progname, lh->flist->line);
+		fprintf(stderr, "%s: conference id does not exist (line %d)\n", progname, lh->csvline->line);
 		return CFBSTATS_ERROR;
 	}
 
@@ -157,13 +157,13 @@ static int get_teamid(struct linehandler *lh)
 	intptr_t poid = ((intptr_t) lh->obj) + cur->offset;
 	struct objectid *outoid = (struct objectid*) poid;
 
-	if (fieldlist_int_at(lh->flist, cur->index, &id) != FIELDLIST_OK) {
+	if (csvline_int_at(lh->csvline, cur->index, &id) != CSVP_OK) {
 		/* FIXME */
 		return CFBSTATS_ERROR;
 	}
 
 	if ((oid = id_map_lookup(id)) == NULL) {
-		fprintf(stderr, "%s: team id does not exist (line %d)\n", progname, lh->flist->line);
+		fprintf(stderr, "%s: team id does not exist (line %d)\n", progname, lh->csvline->line);
 		return CFBSTATS_ERROR;
 	}
 
@@ -181,12 +181,12 @@ static int get_gameid(struct linehandler *lh)
 	intptr_t poid = ((intptr_t) lh->obj) + cur->offset;
 	struct objectid *outoid = (struct objectid*) poid;
 
-	if (fieldlist_str_at(lh->flist, cur->index, &str) != FIELDLIST_OK) {
-		const char *err = fieldlist_strerror(lh->flist);
+	if (csvline_str_at(lh->csvline, cur->index, &str) != CSVP_OK) {
+		const char *err = csvline_strerror(lh->csvline);
 		fprintf(stderr, "%s: error parsing field index %d (line %d): %s\n",
 				progname,
 				cur->index,
-				lh->flist->line,
+				lh->csvline->line,
 				err);
 		return CFBSTATS_ERROR;
 	}
@@ -194,7 +194,7 @@ static int get_gameid(struct linehandler *lh)
 	id = pack_game_code(str);
 
 	if ((oid = id_map_lookup(id)) == NULL) {
-		fprintf(stderr, "%s: game id does not exist (line %d)\n", progname, lh->flist->line);
+		fprintf(stderr, "%s: game id does not exist (line %d)\n", progname, lh->csvline->line);
 		return CFBSTATS_ERROR;
 	}
 
@@ -215,7 +215,7 @@ static int get_date(struct linehandler *lh)
 	struct tm tm;
 	const char *lastchar;
 
-	if (fieldlist_str_at(lh->flist, cur->index, &str) != FIELDLIST_OK) {
+	if (csvline_str_at(lh->csvline, cur->index, &str) != CSVP_OK) {
 		/* FIXME */
 		return CFBSTATS_ERROR;
 	}

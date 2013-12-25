@@ -18,7 +18,7 @@ enum file_type {
 struct file_handler {
 	const char *file;
 	enum file_type type;
-	int (*parsing_func)(struct fieldlist *);
+	int (*parsing_func)(struct csvline *);
 };
 
 static const struct file_handler file_handlers[] = {

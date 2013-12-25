@@ -3,7 +3,7 @@
 
 #include <predcfb/predcfb.h>
 #include <predcfb/objectid.h>
-#include <predcfb/fieldlist.h>
+#include <predcfb/csvparse.h>
 
 #define CFBSTATS_ID_MAP_SIZE 4096
 
@@ -16,10 +16,10 @@ extern const struct objectid *id_map_lookup(int id);
 extern int pack_game_code(const char *str);
 
 /* prototypes for handling a line from each file */
-extern int parse_conference_csv(struct fieldlist *);
-extern int parse_team_csv(struct fieldlist *);
-extern int parse_game_csv(struct fieldlist *);
-extern int parse_stats_csv(struct fieldlist *);
+extern int parse_conference_csv(struct csvline *);
+extern int parse_team_csv(struct csvline *);
+extern int parse_game_csv(struct csvline *);
+extern int parse_stats_csv(struct csvline *);
 
 /* field description structure */
 enum field_type {
@@ -66,7 +66,7 @@ extern const int total_fields_stats;
 struct linehandler {
 	const struct fielddesc *descriptions;
 	const struct fielddesc *current;
-	struct fieldlist *flist;
+	struct csvline *csvline;
 	void *obj;
 };
 

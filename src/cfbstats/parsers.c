@@ -9,14 +9,14 @@
 /* csv header verification */
 
 static int check_csv_header(
-		struct fieldlist *f,
+		struct csvline *c,
 		const struct fielddesc *desc_list)
 {
 	const char *field;
 	const struct fielddesc *desc = desc_list;
 
 	while (desc->type != FIELD_TYPE_END) {
-		if (fieldlist_str_at(f, desc->index, &field) != FIELDLIST_OK)
+		if (csvline_str_at(c, desc->index, &field) != CSVP_OK)
 			return CFBSTATS_ERROR;
 
 		if (strcmp(field, desc->name) != 0) {
@@ -32,20 +32,20 @@ static int check_csv_header(
 
 /* parse conference.csv */
 
-int parse_conference_csv(struct fieldlist *f)
+int parse_conference_csv(struct csvline *c)
 {
 	struct linehandler handler;
 	struct conference *conf;
 	struct objectid oid;
 	int id;
 
-	if (f->num_fields != total_fields_conference) {
+	if (c->num_fields != total_fields_conference) {
 		cfbstats_errno = CFBSTATS_EINVALIDFILE;
 		return CFBSTATS_ERROR;
 	}
 
-	if (f->line == 1) {
-		return check_csv_header(f, fdesc_conference);
+	if (c->line == 1) {
+		return check_csv_header(c, fdesc_conference);
 	}
 
 	conf = objectdb_create_conference();
@@ -57,7 +57,7 @@ int parse_conference_csv(struct fieldlist *f)
 	}
 
 	handler.descriptions = fdesc_conference;
-	handler.flist = f;
+	handler.csvline = c;
 	handler.obj = conf;
 
 	/* parse the fields */
@@ -77,20 +77,20 @@ int parse_conference_csv(struct fieldlist *f)
 
 /* parse team.csv */
 
-int parse_team_csv(struct fieldlist *f)
+int parse_team_csv(struct csvline *c)
 {
 	struct linehandler handler;
 	struct objectid oid;
 	int id;
 	struct team *team;
 
-	if (f->num_fields != total_fields_team) {
+	if (c->num_fields != total_fields_team) {
 		cfbstats_errno = CFBSTATS_EINVALIDFILE;
 		return CFBSTATS_ERROR;
 	}
 
-	if (f->line == 1) {
-		return check_csv_header(f, fdesc_team);
+	if (c->line == 1) {
+		return check_csv_header(c, fdesc_team);
 	}
 
 	if ((team = objectdb_create_team()) == NULL) {
@@ -99,7 +99,7 @@ int parse_team_csv(struct fieldlist *f)
 	}
 
 	handler.descriptions = fdesc_team;
-	handler.flist = f;
+	handler.csvline = c;
 	handler.obj = team;
 
 	/* parse the fields */
@@ -125,20 +125,20 @@ int parse_team_csv(struct fieldlist *f)
 
 /* parse game.csv */
 
-int parse_game_csv(struct fieldlist *f)
+int parse_game_csv(struct csvline *c)
 {
 	struct linehandler handler;
 	struct objectid oid;
 	int id;
 	struct game *game;
 
-	if (f->num_fields != total_fields_game) {
+	if (c->num_fields != total_fields_game) {
 		cfbstats_errno = CFBSTATS_EINVALIDFILE;
 		return CFBSTATS_ERROR;
 	}
 
-	if (f->line == 1) {
-		return check_csv_header(f, fdesc_game);
+	if (c->line == 1) {
+		return check_csv_header(c, fdesc_game);
 	}
 
 	if ((game = objectdb_create_game()) == NULL) {
@@ -147,7 +147,7 @@ int parse_game_csv(struct fieldlist *f)
 	}
 
 	handler.descriptions = fdesc_game;
-	handler.flist = f;
+	handler.csvline = c;
 	handler.obj = game;
 
 	/* parse the fields */
@@ -196,7 +196,7 @@ static void update_team_stats(struct team *team, struct stats *stats)
 	team->stats.points += stats->points;
 }
 
-int parse_stats_csv(struct fieldlist *f)
+int parse_stats_csv(struct csvline *c)
 {
 	struct stats_wrapper sw;
 	struct linehandler handler;
@@ -204,17 +204,17 @@ int parse_stats_csv(struct fieldlist *f)
 	struct team *team;
 	struct game *game;
 
-	if (f->num_fields != total_fields_stats) {
+	if (c->num_fields != total_fields_stats) {
 		cfbstats_errno = CFBSTATS_EINVALIDFILE;
 		return CFBSTATS_ERROR;
 	}
 
-	if (f->line == 1) {
-		return check_csv_header(f, fdesc_stats);
+	if (c->line == 1) {
+		return check_csv_header(c, fdesc_stats);
 	}
 
 	handler.descriptions = fdesc_stats;
-	handler.flist = f;
+	handler.csvline = c;
 	handler.obj = &sw;
 
 	/* parse the fields */

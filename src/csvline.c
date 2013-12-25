@@ -3,7 +3,7 @@
 #include <string.h>
 #include <limits.h>
 
-#include <predcfb/fieldlist.h>
+#include <predcfb/csvparse.h>
 
 static const char *error_strings[] = {
 	"No error",
@@ -41,115 +41,66 @@ void strbuf_clear(struct strbuf *s)
 	s->used = 0;
 }
 
-/* fieldlist functions */
+/* csvline functions */
 
-int fieldlist_add(struct fieldlist *f, const char *str, size_t len)
+int csvline_add(struct csvline *c, const char *str, size_t len)
 {
 	const char *strbuf_str;
 
 	if (!str) {
-		f->error = FIELDLIST_ENULLSTR;
-		return FIELDLIST_ERROR;
+		c->error = CSVLINE_ENULLSTR;
+		return CSVP_ERROR;
 	}
 
-	if (f->num_fields >= FIELDLIST_MAX_FIELDS) {
-		f->error = FIELDLIST_EMAXFIELDS;
-		return FIELDLIST_ERROR;
+	if (c->num_fields >= CSVLINE_MAX_FIELDS) {
+		c->error = CSVLINE_EMAXFIELDS;
+		return CSVP_ERROR;
 	}
 
-	strbuf_str = strbuf_add(&f->strbuf, str, len);
+	strbuf_str = strbuf_add(&c->strbuf, str, len);
 	if (!strbuf_str) {
-		f->error = FIELDLIST_ESTRBUFSPACE;
-		return FIELDLIST_ERROR;
+		c->error = CSVLINE_ESTRBUFSPACE;
+		return CSVP_ERROR;
 	}
 
-	f->fields[f->num_fields] = strbuf_str;
-	f->num_fields++;
+	c->fields[c->num_fields] = strbuf_str;
+	c->num_fields++;
 
-	return FIELDLIST_OK;
+	return CSVP_OK;
 }
 
-void fieldlist_clear(struct fieldlist *f)
+void csvline_clear(struct csvline *c)
 {
-	strbuf_clear(&f->strbuf);
-	f->num_fields = 0;
-	f->line = 0;
-	f->iter = FIELDLIST_ITER_FIRST;
-	f->error = FIELDLIST_ENONE;
+	strbuf_clear(&c->strbuf);
+	c->num_fields = 0;
+	c->line = 0;
+	c->error = CSVLINE_ENONE;
 }
 
-void fieldlist_iter_begin(struct fieldlist *f)
+int csvline_str_at(struct csvline *c, int at, const char **out)
 {
-	f->iter = FIELDLIST_ITER_FIRST;
-}
-
-const char *fieldlist_iter_next(struct fieldlist *f)
-{
-	const char *field;
-
-	f->iter++;
-	if (f->iter >= f->num_fields) {
-		f->error = FIELDLIST_EITEREND;
-		return NULL;
-	} else if (f->iter < 0) {
-		f->error = FIELDLIST_ERANGE;
-		return NULL;
-	}
-
-	field = f->fields[f->iter];
-	return field;
-}
-
-int fieldlist_iter_next_int(struct fieldlist *f, int *out)
-{
-	const char *str;
-
-	if ((str = fieldlist_iter_next(f)) == NULL)
-		return FIELDLIST_ERROR;
-
-	if (fieldlist_int_at(f, f->iter, out) != FIELDLIST_OK)
-		return FIELDLIST_ERROR;
-
-	return FIELDLIST_OK;
-}
-
-int fieldlist_iter_next_short(struct fieldlist *f, short *out)
-{
-	const char *str;
-
-	if ((str = fieldlist_iter_next(f)) == NULL)
-		return FIELDLIST_ERROR;
-
-	if (fieldlist_short_at(f, f->iter, out) != FIELDLIST_OK)
-		return FIELDLIST_ERROR;
-
-	return FIELDLIST_OK;
-}
-
-int fieldlist_str_at(struct fieldlist *f, int at, const char **out)
-{
-	if (at < 0 || at >= f->num_fields) {
-		f->error = FIELDLIST_EINDEX;
-		return FIELDLIST_ERROR;
+	if (at < 0 || at >= c->num_fields) {
+		c->error = CSVLINE_EINDEX;
+		return CSVP_ERROR;
 	}
 	
-	*out = f->fields[at];
+	*out = c->fields[at];
 
-	return FIELDLIST_OK;
+	return CSVP_OK;
 }
 
-int fieldlist_int_at(struct fieldlist *f, int at, int *out)
+int csvline_int_at(struct csvline *c, int at, int *out)
 {
 	long int li;
 	char *endptr;
 	const char *str;
 
-	if (at < 0 || at >= f->num_fields) {
-		f->error = FIELDLIST_EINDEX;
-		return FIELDLIST_ERROR;
+	if (at < 0 || at >= c->num_fields) {
+		c->error = CSVLINE_EINDEX;
+		return CSVP_ERROR;
 	}
 
-	str = f->fields[at];
+	str = c->fields[at];
 	li = strtol(str, &endptr, 10);
 
 	if (*endptr != '\0') {
@@ -158,32 +109,32 @@ int fieldlist_int_at(struct fieldlist *f, int at, int *out)
 		 * points at anything other than the null byte, there
 		 * was an error trying to parse the string
 		 */
-		f->error = FIELDLIST_EWRONGTYPE;
-		return FIELDLIST_ERROR;
+		c->error = CSVLINE_EWRONGTYPE;
+		return CSVP_ERROR;
 	}
 
 	if (li < INT_MIN || li > INT_MAX) {
-		f->error = FIELDLIST_ERANGE;
-		return FIELDLIST_ERROR;
+		c->error = CSVLINE_ERANGE;
+		return CSVP_ERROR;
 	}
 
 	*out = (int) li;
 
-	return FIELDLIST_OK;
+	return CSVP_OK;
 }
 
-int fieldlist_short_at(struct fieldlist *f, int at, short *out)
+int csvline_short_at(struct csvline *c, int at, short *out)
 {
 	long int li;
 	char *endptr;
 	const char *str;
 
-	if (at < 0 || at >= f->num_fields) {
-		f->error = FIELDLIST_EINDEX;
-		return FIELDLIST_ERROR;
+	if (at < 0 || at >= c->num_fields) {
+		c->error = CSVLINE_EINDEX;
+		return CSVP_ERROR;
 	}
 
-	str = f->fields[at];
+	str = c->fields[at];
 	li = strtol(str, &endptr, 10);
 
 	if (*endptr != '\0') {
@@ -192,21 +143,21 @@ int fieldlist_short_at(struct fieldlist *f, int at, short *out)
 		 * points at anything other than the null byte, there
 		 * was an error trying to parse the string
 		 */
-		f->error = FIELDLIST_EWRONGTYPE;
-		return FIELDLIST_ERROR;
+		c->error = CSVLINE_EWRONGTYPE;
+		return CSVP_ERROR;
 	}
 
 	if (li < SHRT_MIN || li > SHRT_MAX) {
-		f->error = FIELDLIST_ERANGE;
-		return FIELDLIST_ERROR;
+		c->error = CSVLINE_ERANGE;
+		return CSVP_ERROR;
 	}
 
 	*out = (short) li;
 
-	return FIELDLIST_OK;
+	return CSVP_OK;
 }
 
-const char *fieldlist_strerror(const struct fieldlist *f)
+const char *csvline_strerror(const struct csvline *c)
 {
-	return error_strings[(int)f->error];
+	return error_strings[(int)c->error];
 }
