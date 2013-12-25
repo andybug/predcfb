@@ -14,7 +14,7 @@ ADD_SUBDIRECTORY(gtest)
 ADD_EXECUTABLE(
 	predcfb_test
 	# --- sources ---
-	fieldlist.cc
+	csvline.cc
 	objectdb.cc
 	objectid.cc
 	zipfile.cc

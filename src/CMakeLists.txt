@@ -12,8 +12,8 @@ ADD_LIBRARY(
 	cfbstats/linehandler.c
 	cfbstats/parsers.c
 	cfbstats/unzip.c
+	csvline.c
 	csvparse.c
-	fieldlist.c
 	objectdb/core.c
 	objectdb/objectid.c
 	objectdb/write.c
