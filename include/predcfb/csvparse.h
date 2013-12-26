@@ -31,7 +31,6 @@ struct csvline {
 	const char *fields[CSVLINE_MAX_FIELDS];
 	int num_fields;
 	int line;
-	int iter;
 	struct strbuf strbuf;
 	enum csvline_error error;
 };

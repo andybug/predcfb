@@ -19,6 +19,18 @@ protected:
 	struct strbuf sb;
 };
 
+class CSVLineTest : public ::testing::Test {
+protected:
+	/* methods */
+	CSVLineTest() {}
+	virtual ~CSVLineTest() {}
+	virtual void SetUp();
+	virtual void TearDown() {}
+
+	/* data */
+	struct csvline csvl;
+};
+
 /* StrBufTest implementation */
 
 void StrBufTest::SetUp()
@@ -85,6 +97,23 @@ TEST_F(StrBufTest, LargeStrings)
 	ASSERT_TRUE(result != NULL);
 	ASSERT_EQ((size_t)STRBUF_SIZE, sb.used);
 	ASSERT_STREQ(buf, result);
+}
+
+/* CSVLine methods */
+
+void CSVLineTest::SetUp()
+{
+	csvline_clear(&csvl);
+}
+
+/* CSVLineTest tests */
+
+TEST_F(CSVLineTest, Clear)
+{
+	ASSERT_EQ(0, csvl.num_fields);
+	ASSERT_EQ(0, csvl.line);
+	ASSERT_EQ((size_t)0, csvl.strbuf.used);
+	ASSERT_EQ(CSVLINE_ENONE, csvl.error);
 }
 
 #if 0
