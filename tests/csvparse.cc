@@ -8,15 +8,15 @@ extern "C" {
 /* StrBufTest class */
 
 class StrBufTest : public ::testing::Test {
-	protected:
-		/* methods */
-		StrBufTest() {}
-		virtual ~StrBufTest() {}
-		virtual void SetUp();
-		virtual void TearDown();
+protected:
+	/* methods */
+	StrBufTest() {}
+	virtual ~StrBufTest() {}
+	virtual void SetUp();
+	virtual void TearDown() {}
 
-		/* data */
-		struct strbuf sb;
+	/* data */
+	struct strbuf sb;
 };
 
 /* StrBufTest implementation */
@@ -26,17 +26,65 @@ void StrBufTest::SetUp()
 	strbuf_clear(&sb);
 }
 
-void StrBufTest::TearDown()
-{
-	/* do nothing */
-}
-
 /* StrBufTest tests */
 
 TEST_F(StrBufTest, Clear)
 {
 	/* sb is cleared during SetUp, so just check the values */
 	ASSERT_EQ(0, sb.used);
+}
+
+TEST_F(StrBufTest, AddOne)
+{
+	const char *str = "Test String";
+	const char *result;
+	size_t len = strlen(str);
+	size_t space = len + 1;		// need to account for \0
+
+	result = strbuf_add(&sb, str, len);
+
+	ASSERT_EQ(space, sb.used);
+	ASSERT_STREQ(str, result);
+}
+
+TEST_F(StrBufTest, AddTwo)
+{
+	const char *str1 = "First String";
+	const char *str2 = "Second String";
+	const char *result1, *result2;
+	size_t len1, len2;
+	size_t space1, space2;
+
+	len1 = strlen(str1);
+	space1 = len1 + 1;
+
+	len2 = strlen(str2);
+	space2 = len2 + 1;
+
+	result1 = strbuf_add(&sb, str1, len1);
+	result2 = strbuf_add(&sb, str2, len2);
+
+	ASSERT_EQ(space1 + space2, sb.used);
+	ASSERT_STREQ(str1, result1);
+	ASSERT_STREQ(str2, result2);
+}
+
+TEST_F(StrBufTest, LargeStrings)
+{
+	char buf[STRBUF_SIZE + 1];
+	const char *result;
+
+	memset(buf, 'a', STRBUF_SIZE);
+	buf[STRBUF_SIZE] = '\0';
+
+	result = strbuf_add(&sb, buf, STRBUF_SIZE);
+	ASSERT_TRUE(result == NULL);
+
+	buf[STRBUF_SIZE - 1] = '\0';
+	result = strbuf_add(&sb, buf, STRBUF_SIZE - 1);
+	ASSERT_TRUE(result != NULL);
+	ASSERT_EQ(STRBUF_SIZE, sb.used);
+	ASSERT_STREQ(buf, result);
 }
 
 #if 0
