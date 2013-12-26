@@ -5,17 +5,6 @@
 
 #include <predcfb/csvparse.h>
 
-static const char *error_strings[] = {
-	"No error",
-	"Maximum fields reached",
-	"String buffer out of space",
-	"Null string received as input",
-	"Value not in range",
-	"Value is not expected type",
-	"Iterator is at the end",
-	"Index is out of bounds"
-};
-
 /* strbuf functions */
 
 const char *strbuf_add(struct strbuf *s, const char *str, size_t len)
@@ -159,5 +148,37 @@ int csvline_short_at(struct csvline *c, int at, short *out)
 
 const char *csvline_strerror(const struct csvline *c)
 {
-	return error_strings[(int)c->error];
+	const char *err;
+
+	switch (c->error) {
+	case CSVLINE_ENONE:
+		err = "No Error";
+		break;
+
+	case CSVLINE_EMAXFIELDS:
+		err = "Maximum fields reached";
+		break;
+
+	case CSVLINE_ESTRBUFSPACE:
+		err = "String buffer out of space";
+		break;
+
+	case CSVLINE_ENULLSTR:
+		err = "Null string received as input";
+		break;
+
+	case CSVLINE_ERANGE:
+		err = "Value not in range";
+		break;
+
+	case CSVLINE_EINDEX:
+		err = "Index out of bounds";
+		break;
+
+	default:
+		err = "No such errors";
+		break;
+	}
+
+	return err;
 }
