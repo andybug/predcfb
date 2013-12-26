@@ -1,13 +1,45 @@
 
-#include <string>
-#include <vector>
-
 #include <gtest/gtest.h>
 
 extern "C" {
-#include <predcfb/fieldlist.h>
+#include <predcfb/csvparse.h>
 }
 
+/* StrBufTest class */
+
+class StrBufTest : public ::testing::Test {
+	protected:
+		/* methods */
+		StrBufTest() {}
+		virtual ~StrBufTest() {}
+		virtual void SetUp();
+		virtual void TearDown();
+
+		/* data */
+		struct strbuf sb;
+};
+
+/* StrBufTest implementation */
+
+void StrBufTest::SetUp()
+{
+	strbuf_clear(&sb);
+}
+
+void StrBufTest::TearDown()
+{
+	/* do nothing */
+}
+
+/* StrBufTest tests */
+
+TEST_F(StrBufTest, Clear)
+{
+	/* sb is cleared during SetUp, so just check the values */
+	ASSERT_EQ(0, sb.used);
+}
+
+#if 0
 namespace {
 
 	class FieldListTest : public ::testing::Test {
@@ -292,3 +324,5 @@ namespace {
 		ASSERT_EQ(fieldlist.error, FIELDLIST_EMAXFIELDS);
 	}
 }
+
+#endif
