@@ -115,8 +115,6 @@ namespace {
 		struct team team1;
 		struct team team2;
 		struct game game;
-		struct objectid oid1;
-		struct objectid oid2;
 		struct objectid oid;
 		char buf[OBJECTID_MD_STR_SIZE];
 		struct tm tm;

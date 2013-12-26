@@ -208,7 +208,7 @@ namespace {
 		ASSERT_TRUE(game1 != NULL);
 
 		strcpy(team1.name, "Team One");
-		strcmp(team2.name, "Team Two");
+		strcpy(team2.name, "Team Two");
 		game1->home = &team1;
 		game1->away = &team2;
 		game1->date = time(NULL);

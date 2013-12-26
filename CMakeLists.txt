@@ -1,5 +1,5 @@
 CMAKE_MINIMUM_REQUIRED(VERSION 2.8.8)
-PROJECT(predcfb C)
+PROJECT(predcfb C CXX)
 
 # --- platform checks ---
 
@@ -25,11 +25,15 @@ CONFIGURE_FILE(
 )
 
 
-# --- c compiler flags ---
+# --- compiler flags ---
 
 SET(CMAKE_C_FLAGS "-Wall -Wextra -std=c99 -pedantic -D_XOPEN_SOURCE=700")
 SET(CMAKE_C_FLAGS_DEBUG "-g -O0")
 SET(CMAKE_C_FLAGS_RELEASE "-O3")
+
+SET(CMAKE_CXX_FLAGS "-Wall -Wextra -std=c++11 -pedantic")
+SET(CMAKE_CXX_FLAGS_DEBUG "-g -O0")
+SET(CMAKE_CXX_FLAGS_RELEASE "-O3")
 
 INCLUDE_DIRECTORIES(include)
 INCLUDE_DIRECTORIES("${PROJECT_BINARY_DIR}")

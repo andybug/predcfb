@@ -31,7 +31,7 @@ void StrBufTest::SetUp()
 TEST_F(StrBufTest, Clear)
 {
 	/* sb is cleared during SetUp, so just check the values */
-	ASSERT_EQ(0, sb.used);
+	ASSERT_EQ((size_t)0, sb.used);
 }
 
 TEST_F(StrBufTest, AddOne)
@@ -83,7 +83,7 @@ TEST_F(StrBufTest, LargeStrings)
 	buf[STRBUF_SIZE - 1] = '\0';
 	result = strbuf_add(&sb, buf, STRBUF_SIZE - 1);
 	ASSERT_TRUE(result != NULL);
-	ASSERT_EQ(STRBUF_SIZE, sb.used);
+	ASSERT_EQ((size_t)STRBUF_SIZE, sb.used);
 	ASSERT_STREQ(buf, result);
 }
 
