@@ -27,8 +27,23 @@ protected:
 	virtual void SetUp();
 	virtual void TearDown() {}
 
+	int insertTestIntegersGood();
+	int insertTestIntegersRange();
+	int insertTestIntegersBad();
+	int insertTestShorts();
+
 	/* data */
 	struct csvline csvl;
+
+	static const char *int_good_strs[];
+	static const int int_good_vals[];
+	static const int int_good_num;
+
+	static const char *int_range_strs[];
+	static const int int_range_num;
+
+	static const char *int_bad_strs[];
+	static const int int_bad_num;
 };
 
 /* StrBufTest implementation */
@@ -104,6 +119,70 @@ TEST_F(StrBufTest, LargeStrings)
 void CSVLineTest::SetUp()
 {
 	csvline_clear(&csvl);
+}
+
+const char *CSVLineTest::int_good_strs[] = {
+	"0",
+	"127",
+	"-10",
+	"32767",
+	"32768",
+	"2147483647"
+};
+
+const int CSVLineTest::int_good_vals[] = {
+	0,
+	127,
+	-10,
+	32767,
+	32768,
+	2147483647
+};
+
+const int CSVLineTest::int_good_num = 6;
+
+int CSVLineTest::insertTestIntegersGood()
+{
+	for (int i = 0; i < int_good_num; i++) {
+		size_t len = strlen(int_good_strs[i]);
+		if (csvline_add(&csvl, int_good_strs[i], len) != CSVP_OK)
+			return CSVP_ERROR;
+	}
+
+	return CSVP_OK;
+}
+
+const char *CSVLineTest::int_range_strs[] = { "2147483648" };
+const int CSVLineTest::int_range_num = 1;
+
+int CSVLineTest::insertTestIntegersRange()
+{
+	for (int i = 0; i < int_range_num; i++) {
+		size_t len = strlen(int_range_strs[i]);
+		if (csvline_add(&csvl, int_range_strs[i], len) != CSVP_OK)
+			return CSVP_ERROR;
+	}
+
+	return CSVP_OK;
+}
+
+const char *CSVLineTest::int_bad_strs[] = { "string", "127string" };
+const int CSVLineTest::int_bad_num = 2;
+
+int CSVLineTest::insertTestIntegersBad()
+{
+	for (int i = 0; i < int_bad_num; i++) {
+		size_t len = strlen(int_bad_strs[i]);
+		if (csvline_add(&csvl, int_bad_strs[i], len) != CSVP_OK)
+			return CSVP_ERROR;
+	}
+
+	return CSVP_OK;
+}
+
+int CSVLineTest::insertTestShorts()
+{
+	return CSVP_OK;
 }
 
 /* CSVLineTest tests */
@@ -208,12 +287,78 @@ TEST_F(CSVLineTest, AddTooLarge)
 	ASSERT_EQ(CSVLINE_ESTRBUFSPACE, csvl.error);
 }
 
+TEST_F(CSVLineTest, InvalidIndex)
+{
+	int err;
+	const char *val;
+
+	err = csvline_str_at(&csvl, 0, &val);
+	ASSERT_EQ(CSVP_ERROR, err);
+	ASSERT_EQ(CSVLINE_EINDEX, csvl.error);
+}
+
 TEST_F(CSVLineTest, StringAt)
 {
+	int err;
+	const char *str_in = "Test String";
+	const char *str_out;
+	size_t len = strlen(str_in);
+	int i;
+
+	for (i = 0; i < 3; i++) {
+		err = csvline_add(&csvl, str_in, len);
+		ASSERT_EQ(CSVP_OK, err);
+	}
+
+	for (i = 0; i < 3; i++) {
+		err = csvline_str_at(&csvl, i, &str_out);
+		ASSERT_EQ(CSVP_OK, err);
+		ASSERT_EQ(CSVLINE_ENONE, csvl.error);
+		ASSERT_STREQ(str_in, str_out);
+	}
 }
 
 TEST_F(CSVLineTest, IntAt)
 {
+	int err;
+
+	err = insertTestIntegersGood();
+	ASSERT_EQ(CSVP_OK, err);
+
+	for (int i = 0; i < csvl.num_fields; i++) {
+		int val;
+		err = csvline_int_at(&csvl, i, &val);
+		ASSERT_EQ(CSVP_OK, err);
+		ASSERT_EQ(CSVLINE_ENONE, csvl.error);
+		ASSERT_TRUE(i < int_good_num);
+		ASSERT_EQ(int_good_vals[i], val);
+	}
+
+	csvline_clear(&csvl);
+
+	err = insertTestIntegersRange();
+	ASSERT_EQ(CSVP_OK, err);
+
+	for (int i = 0; i < csvl.num_fields; i++) {
+		int val;
+		err = csvline_int_at(&csvl, i, &val);
+		ASSERT_EQ(CSVP_ERROR, err);
+		ASSERT_EQ(CSVLINE_ERANGE, csvl.error);
+		csvl.error = CSVLINE_ENONE;
+	}
+
+	csvline_clear(&csvl);
+
+	err = insertTestIntegersBad();
+	ASSERT_EQ(CSVP_OK, err);
+
+	for (int i = 0; i < csvl.num_fields; i++) {
+		int val;
+		err = csvline_int_at(&csvl, i, &val);
+		ASSERT_EQ(CSVP_ERROR, err);
+		ASSERT_EQ(CSVLINE_EWRONGTYPE, csvl.error);
+		csvl.error = CSVLINE_ENONE;
+	}
 }
 
 TEST_F(CSVLineTest, ShortAt)
