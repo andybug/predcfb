@@ -18,6 +18,7 @@ ADD_LIBRARY(
 	objectdb/objectid.c
 	objectdb/write.c
 	options.c
+	string.c
 	zipfile.c
 )
 
