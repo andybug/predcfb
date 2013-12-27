@@ -116,6 +116,110 @@ TEST_F(CSVLineTest, Clear)
 	ASSERT_EQ(CSVLINE_ENONE, csvl.error);
 }
 
+TEST_F(CSVLineTest, AddOne)
+{
+	const char *str = "Test String";
+	size_t len = strlen(str);
+	int err;
+
+	err = csvline_add(&csvl, str, len);
+	ASSERT_EQ(err, CSVP_OK);
+	ASSERT_EQ(1, csvl.num_fields);
+	ASSERT_EQ(len + 1, csvl.strbuf.used);
+	ASSERT_EQ(CSVLINE_ENONE, csvl.error);
+	ASSERT_STREQ(csvl.fields[0], str);
+}
+
+TEST_F(CSVLineTest, AddTwo)
+{
+	const char *str = "Test String";
+	size_t len = strlen(str);
+	int err;
+
+	err = csvline_add(&csvl, str, len);
+	ASSERT_EQ(CSVP_OK, err);
+
+	err = csvline_add(&csvl, str, len);
+	ASSERT_EQ(CSVP_OK, err);
+	ASSERT_EQ(2, csvl.num_fields);
+	ASSERT_EQ((len+1) * 2, csvl.strbuf.used);
+	ASSERT_EQ(CSVLINE_ENONE, csvl.error);
+
+	ASSERT_STREQ(csvl.fields[0], str);
+	ASSERT_STREQ(csvl.fields[1], str);
+}
+
+TEST_F(CSVLineTest, AddNull)
+{
+	int err;
+
+	err = csvline_add(&csvl, NULL, 0);
+	ASSERT_EQ(CSVP_ERROR, err);
+	ASSERT_EQ(CSVLINE_ENULLSTR, csvl.error);
+}
+
+TEST_F(CSVLineTest, Clear2)
+{
+	int err;
+
+	err = csvline_add(&csvl, "string", 6);
+	ASSERT_EQ(CSVLINE_ENONE, err);
+
+	csvline_clear(&csvl);
+	ASSERT_EQ(0, csvl.num_fields);
+	ASSERT_EQ(0, csvl.line);
+	ASSERT_EQ((size_t)0, csvl.strbuf.used);
+	ASSERT_EQ(CSVLINE_ENONE, csvl.error);
+}
+
+TEST_F(CSVLineTest, AddTooMany)
+{
+	int err;
+
+	for (int i = 0; i < CSVLINE_MAX_FIELDS; i++) {
+		err = csvline_add(&csvl, "string", 6);
+		ASSERT_EQ(CSVP_OK, err);
+		ASSERT_EQ(CSVLINE_ENONE, csvl.error);
+	}
+
+	err = csvline_add(&csvl, "string", 6);
+	ASSERT_EQ(CSVP_ERROR, err);
+	ASSERT_EQ(CSVLINE_EMAXFIELDS, csvl.error);
+}
+
+TEST_F(CSVLineTest, AddTooLarge)
+{
+	char buf[STRBUF_SIZE + 1];
+	int err;
+
+	memset(buf, 'a', STRBUF_SIZE);
+	buf[STRBUF_SIZE - 1] = '\0';
+
+	err = csvline_add(&csvl, buf, STRBUF_SIZE - 1);
+	ASSERT_EQ(CSVP_OK, err);
+	ASSERT_EQ(CSVLINE_ENONE, csvl.error);
+
+	csvline_clear(&csvl);
+	buf[STRBUF_SIZE - 1] = 'a';
+	buf[STRBUF_SIZE] = '\0';
+
+	err = csvline_add(&csvl, buf, STRBUF_SIZE);
+	ASSERT_EQ(CSVP_ERROR, err);
+	ASSERT_EQ(CSVLINE_ESTRBUFSPACE, csvl.error);
+}
+
+TEST_F(CSVLineTest, StringAt)
+{
+}
+
+TEST_F(CSVLineTest, IntAt)
+{
+}
+
+TEST_F(CSVLineTest, ShortAt)
+{
+}
+
 #if 0
 namespace {
 
