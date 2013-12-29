@@ -30,10 +30,6 @@ protected:
 	virtual void SetUp();
 	virtual void TearDown() {}
 
-	int insertTestIntegersGood();
-	int insertTestIntegersRange();
-	int insertTestIntegersBad();
-	int insertTestShorts();
 	int insertStrings(const std::vector<std::string> &strs);
 	void setupShorts();
 	void setupIntegers();
@@ -41,15 +37,10 @@ protected:
 	/* data */
 	struct csvline csvl;
 
-	static const char *int_good_strs[];
-	static const int int_good_vals[];
-	static const int int_good_num;
-
-	static const char *int_range_strs[];
-	static const int int_range_num;
-
-	static const char *int_bad_strs[];
-	static const int int_bad_num;
+	static std::vector<std::string> int_good_strs;
+	static std::vector<int> int_good_vals;
+	static std::vector<std::string> int_range_strs;
+	static std::vector<std::string> int_bad_strs;
 
 	static std::vector<std::string> short_good_strs;
 	static std::vector<short> short_good_vals;
@@ -169,68 +160,31 @@ void CSVLineTest::setupShorts()
 	short_bad_strs.push_back("127string");
 }
 
-const char *CSVLineTest::int_good_strs[] = {
-	"0",
-	"127",
-	"-10",
-	"32767",
-	"32768",
-	"2147483647"
-};
+std::vector<std::string> CSVLineTest::int_good_strs;
+std::vector<int> CSVLineTest::int_good_vals;
+std::vector<std::string> CSVLineTest::int_range_strs;
+std::vector<std::string> CSVLineTest::int_bad_strs;
 
-const int CSVLineTest::int_good_vals[] = {
-	0,
-	127,
-	-10,
-	32767,
-	32768,
-	2147483647
-};
-
-const int CSVLineTest::int_good_num = 6;
-
-int CSVLineTest::insertTestIntegersGood()
+void CSVLineTest::setupIntegers()
 {
-	for (int i = 0; i < int_good_num; i++) {
-		size_t len = strlen(int_good_strs[i]);
-		if (csvline_add(&csvl, int_good_strs[i], len) != CSVP_OK)
-			return CSVP_ERROR;
-	}
+	int_good_strs.push_back("0");
+	int_good_strs.push_back("127");
+	int_good_strs.push_back("-10");
+	int_good_strs.push_back("32767");
+	int_good_strs.push_back("32768");
+	int_good_strs.push_back("2147483647");
 
-	return CSVP_OK;
-}
+	int_good_vals.push_back(0);
+	int_good_vals.push_back(127);
+	int_good_vals.push_back(-10);
+	int_good_vals.push_back(32767);
+	int_good_vals.push_back(32768);
+	int_good_vals.push_back(2147483647);
 
-const char *CSVLineTest::int_range_strs[] = { "2147483648" };
-const int CSVLineTest::int_range_num = 1;
+	int_range_strs.push_back("2147483648");
 
-int CSVLineTest::insertTestIntegersRange()
-{
-	for (int i = 0; i < int_range_num; i++) {
-		size_t len = strlen(int_range_strs[i]);
-		if (csvline_add(&csvl, int_range_strs[i], len) != CSVP_OK)
-			return CSVP_ERROR;
-	}
-
-	return CSVP_OK;
-}
-
-const char *CSVLineTest::int_bad_strs[] = { "string", "127string" };
-const int CSVLineTest::int_bad_num = 2;
-
-int CSVLineTest::insertTestIntegersBad()
-{
-	for (int i = 0; i < int_bad_num; i++) {
-		size_t len = strlen(int_bad_strs[i]);
-		if (csvline_add(&csvl, int_bad_strs[i], len) != CSVP_OK)
-			return CSVP_ERROR;
-	}
-
-	return CSVP_OK;
-}
-
-int CSVLineTest::insertTestShorts()
-{
-	return CSVP_OK;
+	int_bad_strs.push_back("string");
+	int_bad_strs.push_back("127string");
 }
 
 /* CSVLineTest tests */
@@ -370,7 +324,9 @@ TEST_F(CSVLineTest, IntAt)
 {
 	int err;
 
-	err = insertTestIntegersGood();
+	setupIntegers();
+
+	err = insertStrings(int_good_strs);
 	ASSERT_EQ(CSVP_OK, err);
 
 	for (int i = 0; i < csvl.num_fields; i++) {
@@ -378,13 +334,11 @@ TEST_F(CSVLineTest, IntAt)
 		err = csvline_int_at(&csvl, i, &val);
 		ASSERT_EQ(CSVP_OK, err);
 		ASSERT_EQ(CSVLINE_ENONE, csvl.error);
-		ASSERT_TRUE(i < int_good_num);
-		ASSERT_EQ(int_good_vals[i], val);
+		ASSERT_EQ(int_good_vals.at(i), val);
 	}
 
 	csvline_clear(&csvl);
-
-	err = insertTestIntegersRange();
+	err = insertStrings(int_range_strs);
 	ASSERT_EQ(CSVP_OK, err);
 
 	for (int i = 0; i < csvl.num_fields; i++) {
@@ -397,7 +351,7 @@ TEST_F(CSVLineTest, IntAt)
 
 	csvline_clear(&csvl);
 
-	err = insertTestIntegersBad();
+	err = insertStrings(int_bad_strs);
 	ASSERT_EQ(CSVP_OK, err);
 
 	for (int i = 0; i < csvl.num_fields; i++) {
