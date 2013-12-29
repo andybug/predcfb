@@ -1,4 +1,12 @@
 
+/**
+ * @file csvline.c
+ * @author Andrew Fields (andybug10@gmail.com)
+ * @brief Implementation of strbuf and csvline functions
+ *
+ * A longer description would go here.
+ */
+
 #include <stdlib.h>
 #include <string.h>
 #include <limits.h>

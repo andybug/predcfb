@@ -48,6 +48,8 @@ protected:
 	static std::vector<std::string> short_bad_strs;
 };
 
+/* TODO: implement CSVParseTest class and unit tests */
+
 /* StrBufTest implementation */
 
 void StrBufTest::SetUp()
