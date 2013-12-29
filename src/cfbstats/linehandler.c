@@ -9,6 +9,7 @@
 #include <predcfb/predcfb.h>
 #include <predcfb/csvparse.h>
 #include <predcfb/objectid.h>
+#include <predcfb/string.h>
 
 #include "cfbstats_internal.h"
 
@@ -54,7 +55,7 @@ static int get_str(struct linehandler *lh)
 		return CFBSTATS_ERROR;
 	}
 
-	strncpy(outbuf, str, cur->len);
+	strlcpy(outbuf, str, cur->len);
 
 	return CFBSTATS_OK;
 }
