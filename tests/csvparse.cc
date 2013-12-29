@@ -1,4 +1,7 @@
 
+#include <vector>
+#include <string>
+
 #include <gtest/gtest.h>
 
 extern "C" {
@@ -31,6 +34,9 @@ protected:
 	int insertTestIntegersRange();
 	int insertTestIntegersBad();
 	int insertTestShorts();
+	int insertStrings(const std::vector<std::string> &strs);
+	void setupShorts();
+	void setupIntegers();
 
 	/* data */
 	struct csvline csvl;
@@ -44,6 +50,11 @@ protected:
 
 	static const char *int_bad_strs[];
 	static const int int_bad_num;
+
+	static std::vector<std::string> short_good_strs;
+	static std::vector<short> short_good_vals;
+	static std::vector<std::string> short_range_strs;
+	static std::vector<std::string> short_bad_strs;
 };
 
 /* StrBufTest implementation */
@@ -119,6 +130,43 @@ TEST_F(StrBufTest, LargeStrings)
 void CSVLineTest::SetUp()
 {
 	csvline_clear(&csvl);
+}
+
+int CSVLineTest::insertStrings(const std::vector<std::string> &strs)
+{
+	std::vector<std::string>::const_iterator it;
+
+	for (it = strs.begin(); it != strs.end(); it++) {
+		size_t len = (*it).length();
+		if (csvline_add(&csvl, (*it).c_str(), len) != CSVP_OK)
+			return CSVP_ERROR;
+	}
+
+	return CSVP_OK;
+}
+
+std::vector<std::string> CSVLineTest::short_good_strs;
+std::vector<short> CSVLineTest::short_good_vals;
+std::vector<std::string> CSVLineTest::short_range_strs;
+std::vector<std::string> CSVLineTest::short_bad_strs;
+
+void CSVLineTest::setupShorts()
+{
+	short_good_strs.push_back("0");
+	short_good_strs.push_back("127");
+	short_good_strs.push_back("-10");
+	short_good_strs.push_back("32767");
+
+	short_good_vals.push_back(0);
+	short_good_vals.push_back(127);
+	short_good_vals.push_back(-10);
+	short_good_vals.push_back(32767);
+
+	short_range_strs.push_back("32768");
+	short_range_strs.push_back("2147483647");
+
+	short_bad_strs.push_back("string");
+	short_bad_strs.push_back("127string");
 }
 
 const char *CSVLineTest::int_good_strs[] = {
@@ -363,4 +411,42 @@ TEST_F(CSVLineTest, IntAt)
 
 TEST_F(CSVLineTest, ShortAt)
 {
+	int err;
+
+	setupShorts();
+
+	err = insertStrings(short_good_strs);
+	ASSERT_EQ(CSVP_OK, err);
+
+	for (int i = 0; i < csvl.num_fields; i++) {
+		short val;
+		err = csvline_short_at(&csvl, i, &val);
+		ASSERT_EQ(CSVP_OK, err);
+		ASSERT_EQ(CSVLINE_ENONE, csvl.error);
+		ASSERT_EQ(short_good_vals.at(i), val);
+	}
+
+	csvline_clear(&csvl);
+	err = insertStrings(short_range_strs);
+	ASSERT_EQ(CSVP_OK, err);
+
+	for (int i = 0; i < csvl.num_fields; i++) {
+		short val;
+		err = csvline_short_at(&csvl, i, &val);
+		ASSERT_EQ(CSVP_ERROR, err);
+		ASSERT_EQ(CSVLINE_ERANGE, csvl.error);
+		csvl.error = CSVLINE_ENONE;
+	}
+
+	csvline_clear(&csvl);
+	err = insertStrings(short_bad_strs);
+	ASSERT_EQ(CSVP_OK, err);
+
+	for (int i = 0; i < csvl.num_fields; i++) {
+		short val;
+		err = csvline_short_at(&csvl, i, &val);
+		ASSERT_EQ(CSVP_ERROR, err);
+		ASSERT_EQ(CSVLINE_EWRONGTYPE, csvl.error);
+		csvl.error = CSVLINE_ENONE;
+	}
 }
