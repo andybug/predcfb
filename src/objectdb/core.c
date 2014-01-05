@@ -276,6 +276,13 @@ struct game *objectdb_get_game(const struct objectid *id)
 	return obj->data.game;
 }
 
+/* objectdb get list */
+struct game *objectdb_get_games(int *_num_games)
+{
+	*_num_games = num_games;
+	return games;
+}
+
 /* objectdb misc functions */
 
 void objectdb_clear(void)

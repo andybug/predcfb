@@ -32,6 +32,9 @@ extern struct game *objectdb_create_game(void);
 extern int objectdb_add_game(struct game *g, struct objectid *id);
 extern struct game *objectdb_get_game(const struct objectid *id);
 
+/* return the list of games and set num_games */
+extern struct game *objectdb_get_games(int *num_games);
+
 extern void objectdb_clear(void);
 
 extern int objectdb_write(void);
