@@ -5,3 +5,4 @@
 # excludes for this directory
 /build/
 /.vimrc
+/tags
