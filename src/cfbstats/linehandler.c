@@ -5,11 +5,12 @@
 #include <string.h>
 #include <assert.h>
 
+#include <openbsd/string.h>
+
 #include <predcfb/cfbstats.h>
 #include <predcfb/predcfb.h>
 #include <predcfb/csvparse.h>
 #include <predcfb/objectid.h>
-#include <predcfb/string.h>
 
 #include "cfbstats_internal.h"
 

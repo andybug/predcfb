@@ -19,7 +19,6 @@ ADD_LIBRARY(
 	objectdb/write.c
 	options.c
 	schedule.c
-	string.c
 	zipfile.c
 )
 
@@ -40,6 +39,7 @@ TARGET_LINK_LIBRARIES(
 	libcsv
 	miniunz
 	polarssl
+	openbsd
 	# --- shared libraries ---
 	yaml
 	z

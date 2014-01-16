@@ -66,8 +66,10 @@ licenses:
  * libcsv - [LGPLv2]
  * minizip - [zlib license]
  * polarssl - [GPLv2]
+ * openbsd - [BSD license]
 
 [GPLv2]: http://www.gnu.org/licenses/gpl-2.0.html
 [LGPLv2]: http://www.gnu.org/licenses/lgpl-2.1.html
 [zlib license]: http://www.zlib.net/zlib_license.html
 [MIT license]: http://opensource.org/licenses/MIT
+[BSD license]: http://www.openbsd.org/policy.html
